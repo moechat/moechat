@@ -41,5 +41,5 @@ func main() {
 	go h.run()
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/chat", chatHandler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":80", nil)
 }
