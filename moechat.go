@@ -9,7 +9,7 @@ import (
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Handling connection: " + r.URL.Path)
-	name := "/srv/chat" + r.URL.Path
+	name := "/srv/chat/index.html"
 	if r.URL.Path != "/" {
 		name = "/srv/chat" + r.URL.Path
 	}
