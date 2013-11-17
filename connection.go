@@ -59,6 +59,14 @@ func (c *connection) reader() {
 					break
 				}
 				h.broadcast <- []byte(msg)
+			} else {
+				m := Message{User: "MoeChat", Message: "A new user, " + msg + ", has joined!"}
+				msg, err := json.Marshal(m)
+				if err != nil {
+					log.Println("Error converting message to JSON: " + err.Error())
+					break
+				}
+				h.broadcast <- []byte(msg)
 			}
 			c.CurrentUser.Name = msg
 		}
