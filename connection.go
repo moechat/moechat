@@ -101,12 +101,12 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		users = append(users, conn.CurrentUser)
 	}
 
-	json, err:= json.Marshal(users)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	err := enc.Encode(users)
 	if err != nil {
 		log.Println("Failed to convert users to JSON: " + err.Error())
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprint(w, string(json))
 }
