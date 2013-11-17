@@ -58,7 +58,7 @@ func (c *connection) writer() {
 
 		log.Println(string(msg))
 
-		err = c.ws.WriteMessage(websocket.TextMessage, msg)
+		err := c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
