@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var CLIENT_VER = "0.1"
+var CLIENT_VER = "0.3"
 var LOG_FILE = "/var/log/moechat.log"
 
 func handler(w http.ResponseWriter, r *http.Request) {
