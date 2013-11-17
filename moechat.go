@@ -53,11 +53,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func initLog() {
-	logfile, err := os.Open(LOG_FILE)
-
-	if os.IsNotExist(err) {
-		logfile, err = os.Create(LOG_FILE)
-	}
+	logfile, err := os.OpenFile(LOG_FILE, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 
 	if err != nil {
 		fmt.Println("Error opening logfile: " + err.Error())
@@ -75,5 +71,8 @@ func main() {
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/chat", chatHandler)
-	http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(":80", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
