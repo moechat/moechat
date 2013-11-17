@@ -42,7 +42,14 @@ func (c *connection) reader() {
 			log.Println("Client version out of date!")
 			die = true
 		}
-		case "m": h.broadcast <- []byte(msg)
+		case "m":
+			m := Message{User: c.name, Message: string(message)}
+			msg, err := json.Marshal(m)
+			if err != nil {
+				log.Println("Error converting message to JSON: " + err.Error())
+				break
+			}
+			h.broadcast <- []byte(msg)
 		case "e": c.email = msg
 		case "u": c.name = msg
 		}
@@ -55,14 +62,7 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for message := range c.send {
-		m := Message{User: c.name, Message: string(message)}
-		msg, err := json.Marshal(m)
-		if err != nil {
-			log.Println("Error converting message to JSON: " + err.Error())
-			break
-		}
-
-		err = c.ws.WriteMessage(websocket.TextMessage, msg)
+		err := c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
@@ -74,7 +74,7 @@ func (c *connection) writer() {
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
-	log.Println("Handling request to /chat from ip " + ip)
+	log.Println("Handling request to /users from ip " + ip)
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(w, "Not a websocket handshake", 400)
@@ -89,4 +89,10 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() { h.unregister <- c }()
 	go c.writer()
 	c.reader()
+}
+
+func onlineHandler(w http.ResponseWriter, r *http.Request) {
+	ip := strings.Split(r.RemoteAddr,":")[0]
+	log.Println("Handling request to /users from ip " + ip)
+
 }
