@@ -47,6 +47,8 @@ func (c *connection) reader() {
 func (c *connection) writer() {
 	for message := range c.send {
 		log.Println(string(message))
+		m := Message{u: c.name, m: string(message)}
+		log.Println(m)
 		msg, err := json.Marshal(Message{u: c.name, m: string(message)})
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
