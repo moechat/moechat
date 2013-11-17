@@ -11,7 +11,6 @@ import (
 func handler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	if ip == "54.227.38.194" {
-		fmt.Println("Ignoring request from ip: " + ip)
 		return
 	}
 	fmt.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
