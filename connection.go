@@ -42,7 +42,7 @@ func (c *connection) reader() {
 			die = true
 		}
 		case "m":
-			m := Message{User: c.CurrentUser.Name, Message: string(msg)}
+			m := Message{User: c.CurrentUser.Name, Message: msg}
 			msg, err := json.Marshal(m)
 			if err != nil {
 				log.Println("Error converting message to JSON: " + err.Error())
@@ -50,7 +50,15 @@ func (c *connection) reader() {
 			}
 			h.broadcast <- []byte(msg)
 		case "e": c.CurrentUser.Email = msg
-		case "u": c.CurrentUser.Name = msg
+		case "u":
+			m := Message{User: "MoeChat", Message: "User " + c.CurrentUser.Name + " is now known as " + msg}
+			c.CurrentUser.Name = msg
+			msg, err := json.Marshal(m)
+			if err != nil {
+				log.Println("Error converting message to JSON: " + err.Error())
+				break
+			}
+			h.broadcast <- []byte(msg)
 		}
 		if(die) {
 			break
