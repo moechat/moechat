@@ -20,8 +20,8 @@ type connection struct {
 }
 
 type Message struct {
-	u string
-	m string
+	User string `json:"u"`
+	Message string `json:"m"`
 }
 
 func (c *connection) reader() {
@@ -55,14 +55,12 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for message := range c.send {
-		m := Message{u: c.name, m: string(message)}
+		m := Message{User: c.name, Message: string(message)}
 		msg, err := json.Marshal(m)
 		if err != nil {
 			log.Println("Error converting message to JSON: " + err.Error())
 			break
 		}
-		log.Println("JSON message: "+string(msg))
-		msg = []byte(`{"u":"`+m.u+`","m":"`+m.m+`"}`)
 
 		err = c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
