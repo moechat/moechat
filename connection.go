@@ -37,7 +37,7 @@ func (c *connection) reader() {
 		die := false
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
-		case "v": if(msg != "0.2") {
+		case "v": if(msg != CLIENT_VER) {
 			c.ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Client out of date!"}`))
 			log.Println("Client version out of date!")
 			die = true
