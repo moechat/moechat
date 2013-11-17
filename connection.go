@@ -33,6 +33,8 @@ func (c *connection) reader() {
 		}
 		smsg := strings.SplitN(string(message), ":", 1)
 		code, msg := smsg[0], smsg[1]
+		log.Println("Code: " + code)
+		log.Println("Message: " + msg)
 		switch code {
 		default: break
 		case "m": h.broadcast <- []byte(msg)
