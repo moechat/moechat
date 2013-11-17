@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -10,9 +11,17 @@ import (
 type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
+	// User info
+	name string
+	email string
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+}
+
+type Message struct {
+	u string
+	m string
 }
 
 func (c *connection) reader() {
@@ -21,14 +30,27 @@ func (c *connection) reader() {
 		if err != nil {
 			break
 		}
-		h.broadcast <- message
+		smsg := strings.SplitN(string(message), ":", 1)
+		code, msg := smsg[0], smsg[1]
+		switch code {
+		default: break
+		case "m": h.broadcast <- []byte(msg)
+		case "e": c.email = msg
+		case "u": c.name = msg
+		}
 	}
 	c.ws.Close()
 }
 
 func (c *connection) writer() {
 	for message := range c.send {
-		err := c.ws.WriteMessage(websocket.TextMessage, message)
+		msg, err := json.Marshal(Message{u: c.name, m: string(message)})
+		if err != nil {
+			log.Println("Error sending message: " + err.Error())
+			break
+		}
+
+		err = c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
