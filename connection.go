@@ -54,7 +54,7 @@ func (c *connection) writer() {
 			log.Println("Error sending message: " + err.Error())
 			break
 		}*/
-		msg := `{"u":"`+m.u+`","m":"`+m.m+`"}`
+		msg := []byte(`{"u":"`+m.u+`","m":"`+m.m+`"}`)
 
 		log.Println(string(msg))
 
