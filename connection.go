@@ -34,16 +34,20 @@ func (c *connection) reader() {
 		log.Println("Message: " + string(message))
 		smsg := strings.SplitN(string(message), ":", 2)
 		code, msg := smsg[0], smsg[1]
+		die := false
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v": if(msg != "0.2") {
 			c.ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Client out of date!"}`))
 			log.Println("Client version out of date!")
-			break
+			die = true
 		}
 		case "m": h.broadcast <- []byte(msg)
 		case "e": c.email = msg
 		case "u": c.name = msg
+		}
+		if(die) {
+			break
 		}
 	}
 	c.ws.Close()
