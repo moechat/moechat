@@ -12,8 +12,7 @@ type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 	// User info
-	name string
-	email string
+	CurrentUser User
 
 	// Buffered channel of outbound messages.
 	send chan []byte
@@ -43,15 +42,15 @@ func (c *connection) reader() {
 			die = true
 		}
 		case "m":
-			m := Message{User: c.name, Message: string(msg)}
+			m := Message{User: c.CurrentUser.name, Message: string(msg)}
 			msg, err := json.Marshal(m)
 			if err != nil {
 				log.Println("Error converting message to JSON: " + err.Error())
 				break
 			}
 			h.broadcast <- []byte(msg)
-		case "e": c.email = msg
-		case "u": c.name = msg
+		case "e": c.CurrentUser.Email = msg
+		case "u": c.CurrentUser.Name = msg
 		}
 		if(die) {
 			break
@@ -84,7 +83,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error handling /chat request: " + err.Error())
 		return
 	}
-	c := &connection{send: make(chan []byte, 256), name: "", email: "", ws: ws}
+	c := &connection{send: make(chan []byte, 256), CurrentUser: User{"",""}, ws: ws}
 	h.register <- c
 	defer func() { h.unregister <- c }()
 	go c.writer()
@@ -95,8 +94,17 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	log.Println("Handling request to /users from ip " + ip)
 
+	users := []User{}
+
 	for conn, _ := range h.connections {
-		log.Println("Username: " + conn.name)
-		log.Println("Email: " + conn.email)
+		append(users, conn.CurrentUser)
 	}
+
+	json, err:= json.Marshal(users)
+	if err != nil {
+		log.Println("Failed to convert users to JSON: " + err.Error())
+		return
+	}
+
+	fmt.Fprint(w, json)
 }
