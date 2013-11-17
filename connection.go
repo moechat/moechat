@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -49,11 +49,12 @@ func (c *connection) writer() {
 		log.Println(string(message))
 		m := Message{u: c.name, m: string(message)}
 		log.Println(m)
-		msg, err := json.Marshal(m)
+		/*msg, err := json.Marshal(m)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
-		}
+		}*/
+		msg := `{"u":"`+m.u+`","m":"`+m.m+`"}`
 
 		log.Println(string(msg))
 
