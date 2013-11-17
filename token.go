@@ -1,4 +1,5 @@
 package main
+
 import (
 	"io"
 	"crypto/sha1"
