@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"io/ioutil"
+	"strings"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
