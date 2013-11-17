@@ -46,17 +46,13 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for message := range c.send {
-		log.Println(string(message))
 		m := Message{u: c.name, m: string(message)}
-		log.Println(m)
 		/*msg, err := json.Marshal(m)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
 		}*/
 		msg := []byte(`{"u":"`+m.u+`","m":"`+m.m+`"}`)
-
-		log.Println(string(msg))
 
 		err := c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
