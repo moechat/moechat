@@ -64,7 +64,7 @@ func initLog() {
 }
 
 func main() {
-	//initLog()
+	initLog()
 	log.Println("Starting MoeChat!\n")
 
 	go h.run()
