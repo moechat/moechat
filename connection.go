@@ -36,7 +36,7 @@ func (c *connection) reader() {
 		log.Println("Code: " + code)
 		log.Println("Message: " + msg)
 		switch code {
-		default: break
+		default: log.Println("Code is not one of m, e and u. Code is: " + code)
 		case "m": h.broadcast <- []byte(msg)
 		case "e": c.email = msg
 		case "u": c.name = msg
@@ -75,7 +75,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error handling /chat request: " + err.Error())
 		return
 	}
-	c := &connection{send: make(chan []byte, 256), ws: ws}
+	c := &connection{send: make(chan []byte, 256), name: "", email: "", ws: ws}
 	h.register <- c
 	defer func() { h.unregister <- c }()
 	go c.writer()
