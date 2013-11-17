@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
+	"strings"
 )
 
 type connection struct {
@@ -29,10 +30,10 @@ func (c *connection) writer() {
 	for message := range c.send {
 		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			log.Println("Error sending message '" + message + "'. Error: " + err.Error())
+			log.Println("Error sending message: " + err.Error())
 			break
 		}
-		log.Println("Message sent: " + message)
+		log.Println("Message sent")
 	}
 	c.ws.Close()
 }

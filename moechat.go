@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"log"
 	"os"
-	"io/ioutil"
 	"strings"
 )
 
@@ -35,6 +34,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	log.Println("Error handling request: " + err.Error())
 	if os.IsNotExist(err) {
+		name := "/srv/chat/404.html"
 		file, err := os.Open(name)
 		if err != nil {
 			log.Println("Error opening 404: " + err.Error())
