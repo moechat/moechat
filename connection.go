@@ -74,7 +74,7 @@ func (c *connection) writer() {
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
-	log.Println("Handling request to /users from ip " + ip)
+	log.Println("Handling request to /chat from ip " + ip)
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		http.Error(w, "Not a websocket handshake", 400)
@@ -91,8 +91,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	c.reader()
 }
 
-func onlineHandler(w http.ResponseWriter, r *http.Request) {
+func usersHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	log.Println("Handling request to /users from ip " + ip)
 
+	log.Println("Connections: " + h.connections)
 }

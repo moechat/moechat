@@ -71,8 +71,9 @@ func main() {
 
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/chat", chatHandler)
+	http.HandleFunc("/users", usersHandler)
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+		log.Fatal("Error putting up server: ", err)
 	}
 }
