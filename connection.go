@@ -95,6 +95,8 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	log.Println("Handling request to /users from ip " + ip)
 
-	log.Print("Connections: ")
-	log.Println(h.connections)
+	for conn, _ := range h.connections {
+		log.Println("User name: " + *conn.name)
+		log.Println("User email: " + *conn.email)
+	}
 }
