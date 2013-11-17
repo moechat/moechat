@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var LOG_FILE = "/var/log/moechat.log"
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	if ip == "54.227.38.194" {
@@ -49,9 +51,27 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
+func initLog() {
+	logfile, err := os.Open(LOG_FILE)
+
+	if os.IsNotExist(err) {
+		logfile, err = os.Create(LOG_FILE)
+	}
+
+	if err != nil {
+		fmt.Println("Error opening logfile: " + err.Error())
+		os.Exit(1)
+	}
+
+	log.SetOutput(logfile)
+}
+
 func main() {
-	fmt.Printf("Starting MoeChat!\n")
+	initLog()
+	log.Println("Starting MoeChat!\n")
+
 	go h.run()
+
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/chat", chatHandler)
 	http.ListenAndServe(":80", nil)
