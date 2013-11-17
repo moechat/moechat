@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -42,7 +43,7 @@ func (c *connection) reader() {
 			die = true
 		}
 		case "m":
-			m := Message{User: c.CurrentUser.name, Message: string(msg)}
+			m := Message{User: c.CurrentUser.Name, Message: string(msg)}
 			msg, err := json.Marshal(m)
 			if err != nil {
 				log.Println("Error converting message to JSON: " + err.Error())
@@ -97,7 +98,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	users := []User{}
 
 	for conn, _ := range h.connections {
-		append(users, conn.CurrentUser)
+		users = append(users, conn.CurrentUser)
 	}
 
 	json, err:= json.Marshal(users)
