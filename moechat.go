@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"log"
 	"os"
 	"io/ioutil"
 	"strings"
@@ -13,7 +14,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if ip == "54.227.38.194" {
 		return
 	}
-	fmt.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
+	log.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
 	name := "/srv/chat/index.html"
 	if r.URL.Path != "/" {
 		name = "/srv/chat" + r.URL.Path
@@ -32,12 +33,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
-	fmt.Println("Error handling request: " + err.Error())
+	log.Println("Error handling request: " + err.Error())
 	if os.IsNotExist(err) {
-		body, err := ioutil.ReadFile("/srv/chat/404.html")
-		if err == nil {
-			fmt.Fprintf(w, string(body))
+		file, err := os.Open(name)
+		if err != nil {
+			log.Println("Error opening 404: " + err.Error())
+			return
 		}
+		finfo, err := file.Stat()
+		if err != nil {
+			log.Println("Error opening 404: " + err.Error())
+			return
+		}
+		http.ServeContent(w, r, name, finfo.ModTime(), file)
 	}
 }
 
