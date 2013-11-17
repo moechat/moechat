@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 func generateToken() (string) {
