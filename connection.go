@@ -43,7 +43,7 @@ func (c *connection) reader() {
 			die = true
 		}
 		case "m":
-			m := Message{User: c.name, Message: string(message)}
+			m := Message{User: c.name, Message: string(msg)}
 			msg, err := json.Marshal(m)
 			if err != nil {
 				log.Println("Error converting message to JSON: " + err.Error())
