@@ -106,6 +106,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to convert users to JSON: " + err.Error())
 		return
 	}
-
-	fmt.Fprint(w, json)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, string(json))
 }
