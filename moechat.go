@@ -8,7 +8,8 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Handling connection: " + r.URL.Path)
+	ip := strings.Split(r.RemoteAddr,":")[0]
+	fmt.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
 	name := "/srv/chat/index.html"
 	if r.URL.Path != "/" {
 		name = "/srv/chat" + r.URL.Path
