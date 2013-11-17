@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -36,7 +36,7 @@ func (c *connection) reader() {
 		code, msg := smsg[0], smsg[1]
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
-		case "v": if(msg != "0.2") { c.ws.WriteMessage(websocket.TextMessage, `{"error":"Client out of date!"}`); break }
+		case "v": if(msg != "0.2") { c.ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Client out of date!"}`)); break }
 		case "m": h.broadcast <- []byte(msg)
 		case "e": c.email = msg
 		case "u": c.name = msg
@@ -53,10 +53,10 @@ func (c *connection) writer() {
 			log.Println("Error converting message to JSON: " + err.Error())
 			break
 		}
-		log.Println("JSON message: "+m)
+		log.Println("JSON message: "+string(msg))
 		msg = []byte(`{"u":"`+m.u+`","m":"`+m.m+`"}`)
 
-		err := c.ws.WriteMessage(websocket.TextMessage, msg)
+		err = c.ws.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
