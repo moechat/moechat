@@ -62,7 +62,7 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for message := range c.send {
-		err := c.ws.WriteMessage(websocket.TextMessage, msg)
+		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
 			log.Println("Error sending message: " + err.Error())
 			break
