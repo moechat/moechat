@@ -31,10 +31,9 @@ func (c *connection) reader() {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
+		log.Println("Message: " + string(message))
 		smsg := strings.SplitN(string(message), ":", 2)
 		code, msg := smsg[0], smsg[1]
-		log.Println("Code: " + code)
-		log.Println("Message: " + msg)
 		switch code {
 		default: log.Println("Code is not one of m, e and u. Code is: " + code)
 		case "m": h.broadcast <- []byte(msg)
