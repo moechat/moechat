@@ -31,7 +31,7 @@ func (c *connection) reader() {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
-		smsg := strings.SplitN(string(message), ":", 1)
+		smsg := strings.SplitN(string(message), ":", 2)
 		code, msg := smsg[0], smsg[1]
 		log.Println("Code: " + code)
 		log.Println("Message: " + msg)
