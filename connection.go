@@ -28,7 +28,7 @@ func (c *connection) reader() {
 		_, message, err := c.ws.ReadMessage()
 		if err != nil {
 			log.Println("Error receiving message: " + err.Error())
-			//break
+			break
 		}
 		log.Println("Message: " + string(message))
 		smsg := strings.SplitN(string(message), ":", 2)
