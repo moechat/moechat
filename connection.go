@@ -51,7 +51,7 @@ func (c *connection) reader() {
 			h.broadcast <- []byte(msg)
 		case "e": c.CurrentUser.Email = msg
 		case "u":
-			if(c.CurrentUser.Name) {
+			if(c.CurrentUser.Name != "") {
 				m := Message{User: "MoeChat", Message: "User " + c.CurrentUser.Name + " is now known as " + msg}
 				msg, err := json.Marshal(m)
 				if err != nil {
