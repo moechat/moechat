@@ -86,13 +86,14 @@ func (c *connection) reader() {
 			if msg == "" || msg == c.CurrentUser.Name {
 				break
 			}
-			delete(h.usernames, c.CurrentUser.Name)
 			if len(msg) > 30 {
 				msg = msg[:30]
 				c.Send(Notification{"Name is too long, your name will be set to "+msg})
 				c.Send(Command{"fnamechange", map[string]string{"newname":msg}})
 			}
-			if h.usernames[msg] {
+			delete(h.usernames, c.CurrentUser.Name)
+			used := h.usernames[msg]
+			if used {
 				num := 1
 				nstr := strconv.Itoa(num)
 				for h.usernames[msg+nstr] {
