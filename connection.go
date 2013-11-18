@@ -84,7 +84,7 @@ func (c *connection) reader() {
 					})
 				} else {
 					Broadcast(Notification{
-						"User " + c.CurrentUser.Name + " has joined the channel!",
+						"User " + msg + " has joined the channel!",
 						"userjoin",
 					})
 				}
@@ -126,7 +126,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		h.unregister <- c
 		Broadcast(Notification{
-			"User " + c.CurrentUser.Name + "has left.",
+			"User " + c.CurrentUser.Name + " has left.",
 			"userleave",
 		})
 	}()
