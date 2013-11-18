@@ -30,7 +30,7 @@ func (h *hub) run() {
 			log.Printf("User %s (ip %s) has left.", c.CurrentUser.Name, c.ws.RemoteAddr())
 			Broadcast(Notification{
 				"User " + c.CurrentUser.Name + "has left.",
-				"userleave"
+				"userleave",
 			})
 			delete(h.connections, c)
 			close(c.send)

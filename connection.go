@@ -68,7 +68,7 @@ func (c *connection) reader() {
 			if(msg != CLIENT_VER) {
 				c.Send(Error{
 					"Client out of date!",
-					"outofdate"
+					"outofdate",
 				})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
@@ -81,12 +81,12 @@ func (c *connection) reader() {
 				if(c.CurrentUser.Name != "") {
 					Broadcast(Notification{
 						"User " + c.CurrentUser.Name + " is now known as " + msg,
-						"namechange"
+						"namechange",
 					})
 				} else {
 					Broadcast(Notification{
 						"User " + c.CurrentUser.Name + " has joined the channel!",
-						"userjoin"
+						"userjoin",
 					})
 				}
 				c.CurrentUser.Name = msg
