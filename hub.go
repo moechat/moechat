@@ -19,6 +19,7 @@ var h = hub {
 	register: make(chan *connection),
 	unregister:  make(chan *connection),
 	connections: make(map[*connection]bool),
+	usernames: make(map[string]bool),
 }
 
 func (h *hub) run() {
