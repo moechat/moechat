@@ -6,6 +6,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -85,6 +86,7 @@ func (c *connection) reader() {
 			if msg == "" || msg == c.CurrentUser.Name {
 				break
 			}
+			delete(h.usernames, c.CurrentUser.Name)
 			if len(msg) > 30 {
 				msg = msg[:30]
 				c.Send(Notification{"Name is too long, your name will be set to "+msg})
@@ -92,12 +94,14 @@ func (c *connection) reader() {
 			}
 			if h.usernames[msg] {
 				num := 1
-				for h.usernames[msg+string(num)] {
+				nstr := strconv.Itoa(num)
+				for h.usernames[msg+nstr] {
 					num += 1
+					nstr = strconv.Itoa(num)
 				}
-				c.Send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+string(num)})
-				c.Send(Command{"fnamechange", map[string]string{"newname":msg+string(num)}})
-				msg = msg + string(num)
+				c.Send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr})
+				c.Send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
+				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
 			if c.CurrentUser.Name != "" {
