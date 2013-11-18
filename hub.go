@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 type hub struct {
 	connections map[*connection]bool
 
@@ -21,7 +25,10 @@ func (h *hub) run() {
 		select {
 		case c := <-h.register:
 			h.connections[c] = true
+			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr)
 		case c := <-h.unregister:
+			Broadcast(Notification{"User " + c.CurrentUser.Name + "has left."})
+			log.Printf("User %s (ip %s) has left.", c.CurrentUser.Name, c.ws.RemoteAddr)
 			delete(h.connections, c)
 			close(c.send)
 		case m := <-h.broadcast:

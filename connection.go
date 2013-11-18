@@ -19,8 +19,34 @@ type connection struct {
 }
 
 type Message struct {
-	User string `json:"u"`
-	Message string `json:"m"`
+	User string `json:"user"`
+	Message string `json:"msg"`
+}
+
+type Notification struct {
+	NotifBody string `json:"notif"`
+}
+
+type Error struct {
+	ErrorBody string `json:"error"`
+}
+
+func Broadcast(v interface{}) {
+	msg, err := json.Marshal(v);
+	if err != nil {
+		log.Printf("Error converting message %s to JSON: %v", msg, err)
+		return
+	}
+	h.broadcast <- []byte(msg)
+}
+
+func (c *connection) Send(v interface{}) {
+	msg, err := json.Marshal(v);
+	if err != nil {
+		log.Printf("Error converting message %s to JSON: %v", msg, err)
+		return
+	}
+	c.send <- msg
 }
 
 func (c *connection) reader() {
@@ -36,39 +62,24 @@ func (c *connection) reader() {
 		die := false
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
-		case "v": if(msg != CLIENT_VER) {
-			c.ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Client out of date!"}`))
-			log.Println("Client version out of date!")
-			die = true
-		}
-		case "m":
-			m := Message{User: c.CurrentUser.Name, Message: msg}
-			msg, err := json.Marshal(m)
-			if err != nil {
-				log.Println("Error converting message to JSON: " + err.Error())
-				break
+		case "v":
+			if(msg != CLIENT_VER) {
+				c.Send(Error{"Client out of date!"})
+				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr)
+				die = true
 			}
-			h.broadcast <- []byte(msg)
+		case "m":
+			Broadcast(Message{User: c.CurrentUser.Name, Message: msg})
 		case "e": c.CurrentUser.Email = msg
 		case "u":
-			if(c.CurrentUser.Name != "") {
-				m := Message{User: "MoeChat", Message: "User " + c.CurrentUser.Name + " is now known as " + msg}
-				msg, err := json.Marshal(m)
-				if err != nil {
-					log.Println("Error converting message to JSON: " + err.Error())
-					break
+			if(msg != "") {
+				if(c.CurrentUser.Name != "") {
+					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
+				} else {
+					Broadcast(Notification{"User " + c.CurrentUser.Name + " has joined the channel!"})
 				}
-				h.broadcast <- []byte(msg)
-			} else {
-				m := Message{User: "MoeChat", Message: "A new user, " + msg + ", has joined!"}
-				msg, err := json.Marshal(m)
-				if err != nil {
-					log.Println("Error converting message to JSON: " + err.Error())
-					break
-				}
-				h.broadcast <- []byte(msg)
+				c.CurrentUser.Name = msg
 			}
-			c.CurrentUser.Name = msg
 		}
 		if(die) {
 			break
@@ -81,10 +92,9 @@ func (c *connection) writer() {
 	for message := range c.send {
 		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			log.Println("Error sending message: " + err.Error())
+			log.Printf("Error sending message to user %s: %v\n", c.CurrentUser.Name, err)
 			break
 		}
-		log.Println("Message sent")
 	}
 	c.ws.Close()
 }
