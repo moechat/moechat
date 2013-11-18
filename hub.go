@@ -27,8 +27,11 @@ func (h *hub) run() {
 			h.connections[c] = true
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
-			Broadcast(Notification{"User " + c.CurrentUser.Name + "has left."})
 			log.Printf("User %s (ip %s) has left.", c.CurrentUser.Name, c.ws.RemoteAddr())
+			Broadcast(Notification{
+				"User " + c.CurrentUser.Name + "has left.",
+				"userleave"
+			})
 			delete(h.connections, c)
 			close(c.send)
 		case m := <-h.broadcast:

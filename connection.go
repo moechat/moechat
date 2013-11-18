@@ -25,10 +25,12 @@ type Message struct {
 
 type Notification struct {
 	NotifBody string `json:"notif"`
+	NotifType string `json:"notiftype"`
 }
 
 type Error struct {
 	ErrorBody string `json:"error"`
+	ErrorType string `json:"errortype"`
 }
 
 func Broadcast(v interface{}) {
@@ -64,7 +66,10 @@ func (c *connection) reader() {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
 			if(msg != CLIENT_VER) {
-				c.Send(Error{"Client out of date!"})
+				c.Send(Error{
+					"Client out of date!",
+					"outofdate"
+				})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			}
@@ -74,9 +79,15 @@ func (c *connection) reader() {
 		case "u":
 			if(msg != "") {
 				if(c.CurrentUser.Name != "") {
-					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
+					Broadcast(Notification{
+						"User " + c.CurrentUser.Name + " is now known as " + msg,
+						"namechange"
+					})
 				} else {
-					Broadcast(Notification{"User " + c.CurrentUser.Name + " has joined the channel!"})
+					Broadcast(Notification{
+						"User " + c.CurrentUser.Name + " has joined the channel!",
+						"userjoin"
+					})
 				}
 				c.CurrentUser.Name = msg
 			}
