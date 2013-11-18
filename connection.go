@@ -84,6 +84,11 @@ func (c *connection) reader() {
 			if(msg != "" && msg != c.CurrentUser.Name) {
 				break
 			}
+			if len(msg) > 100 {
+				msg = msg[:100]
+				c.Send(Notification{"Name is too long, your name will be set to "+msg})
+				c.Send(Command{"fnamechange", map[string]string{"newname":msg}})
+			}
 			if(h.usernames[msg]) {
 				num := 1
 				for h.usernames[msg+string(num)] {
