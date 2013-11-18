@@ -70,7 +70,7 @@ func (c *connection) reader() {
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
-			if(msg != CLIENT_VER) {
+			if msg != CLIENT_VER {
 				c.Send(Error{"outofdate", "Client out of date!"})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
@@ -82,15 +82,15 @@ func (c *connection) reader() {
 			Broadcast(Message{User: c.CurrentUser.Name, Message: msg})
 		case "e": c.CurrentUser.Email = msg
 		case "u":
-			if(msg == "" || msg == c.CurrentUser.Name) {
+			if msg == "" || msg == c.CurrentUser.Name {
 				break
 			}
-			if len(msg) > 100 {
-				msg = msg[:100]
+			if len(msg) > 30 {
+				msg = msg[:30]
 				c.Send(Notification{"Name is too long, your name will be set to "+msg})
 				c.Send(Command{"fnamechange", map[string]string{"newname":msg}})
 			}
-			if(h.usernames[msg]) {
+			if h.usernames[msg] {
 				num := 1
 				for h.usernames[msg+string(num)] {
 					num += 1
@@ -100,14 +100,14 @@ func (c *connection) reader() {
 				msg = msg + string(num)
 			}
 			msg = html.EscapeString(msg)
-			if(c.CurrentUser.Name != "") {
+			if c.CurrentUser.Name != "" {
 				Broadcast(Command{"namechange", map[string]string{"currname":c.CurrentUser.Name, "email":c.CurrentUser.Email, "newname":msg}})
 				Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
 			}
 			c.CurrentUser.Name = msg
 			h.usernames[msg] = true;
 		}
-		if(die) {
+		if die {
 			break
 		}
 	}
@@ -141,6 +141,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		h.unregister <- c
+		if c.CurrentUser.Name == "" {
+			return
+		}
 		Broadcast(Command{"userleave", map[string]string{"name":c.CurrentUser.Name, "email":c.CurrentUser.Email}})
 		Broadcast(Notification{"User " + c.CurrentUser.Name + " has left."})
 	}()
