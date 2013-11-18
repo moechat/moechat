@@ -63,7 +63,7 @@ func (c *connection) reader() {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
-		fmt.Printf("Receiving message: %s", string(message))
+		log.Printf("Receiving message: %s", string(message))
 		smsg := strings.SplitN(string(message), ":", 2)
 		code, msg := smsg[0], smsg[1]
 		die := false
