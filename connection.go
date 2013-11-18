@@ -85,7 +85,7 @@ func (c *connection) reader() {
 					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
 				} else {
 					Broadcast(Notification{"User " + msg + " has joined the channel!"})
-					Broadcast(Command{"userjoin", map[string]string{"user":c.CurrentUser}}
+					Broadcast(Command{"userjoin", map[string]string{"user":c.CurrentUser}})
 				}
 				c.CurrentUser.Name = msg
 			}
