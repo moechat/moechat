@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"html"
 	"log"
@@ -40,6 +41,11 @@ type Command struct {
 }
 
 func Broadcast(v interface{}) {
+	switch v := v.(type) {
+	case Message: fmt.Fprintf("<div>%s: %s</div>", v.User, v.Message)
+	case Notification: fmt.Fprintf("<div><i>%s</i></div>", v.NotifBody)
+	}
+
 	msg, err := json.Marshal(v);
 	if err != nil {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
