@@ -78,13 +78,14 @@ func (c *connection) reader() {
 			Broadcast(Message{User: c.CurrentUser.Name, Message: msg})
 		case "e": c.CurrentUser.Email = msg
 		case "u":
-			if(msg != "") {
+			if(msg != "" && msg != c.CurrentUser.Name) {
 				msg = html.EscapeString(msg)
 				if(c.CurrentUser.Name != "") {
+					Broadcast(Command{"namechange", map[string]string{"user":c.CurrentUser, "newname":msg}})
 					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
 				} else {
 					Broadcast(Notification{"User " + msg + " has joined the channel!"})
-					//Broadcast(Command{"userjoin", map[string]string{}}
+					Broadcast(Command{"userjoin", map[string]string{"user":c.CurrentUser}}
 				}
 				c.CurrentUser.Name = msg
 			}
@@ -123,6 +124,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		h.unregister <- c
+		Broadcast(Command{"userleave", map[string]string{"user":c.CurrentUser}})
 		Broadcast(Notification{"User " + c.CurrentUser.Name + " has left."})
 	}()
 	go c.writer()
