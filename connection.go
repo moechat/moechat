@@ -90,7 +90,7 @@ func (c *connection) reader() {
 					num += 1
 				}
 				c.Send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+string(num)})
-				c.Send(Command{"fnamechange", map[string]string{"newname":newname}})
+				c.Send(Command{"fnamechange", map[string]string{"newname":msg+string(num)}})
 				msg = msg + string(num)
 			}
 			msg = html.EscapeString(msg)
