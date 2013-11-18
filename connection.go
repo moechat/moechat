@@ -42,8 +42,8 @@ type Command struct {
 
 func Broadcast(v interface{}) {
 	switch v := v.(type) {
-	case Message: fmt.Fprintf("<div>%s: %s</div>", v.User, v.Message)
-	case Notification: fmt.Fprintf("<div><i>%s</i></div>", v.NotifBody)
+	case Message: fmt.Fprintf(MSG_LOG, "<div>%s: %s</div>", v.User, v.Message)
+	case Notification: fmt.Fprintf(MSG_LOG, "<div><i>%s</i></div>", v.NotifBody)
 	}
 
 	msg, err := json.Marshal(v);
