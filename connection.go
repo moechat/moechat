@@ -78,7 +78,7 @@ func (c *connection) reader() {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
 			if msg != CLIENT_VER {
-				c.Send(Error{"outofdate", "Client out of date!"})
+				c.Send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			} else {
