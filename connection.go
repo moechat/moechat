@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"html"
 	"log"
 	"net/http"
 	"strings"
@@ -25,12 +26,16 @@ type Message struct {
 
 type Notification struct {
 	NotifBody string `json:"notif"`
-	NotifType string `json:"notiftype"`
 }
 
 type Error struct {
-	ErrorBody string `json:"error"`
-	ErrorType string `json:"errortype"`
+	ErrorType string `json:"error"`
+	ErrorMsg string `json:"msg"`
+}
+
+type Command struct {
+	Command string `json:"cmd"`
+	Args map[string]string `json:"args"`
 }
 
 func Broadcast(v interface{}) {
@@ -65,10 +70,7 @@ func (c *connection) reader() {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
 			if(msg != CLIENT_VER) {
-				c.Send(Error{
-					"Client out of date!",
-					"outofdate",
-				})
+				c.Send(Error{"Client out of date!", "outofdate"})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			}
@@ -77,16 +79,12 @@ func (c *connection) reader() {
 		case "e": c.CurrentUser.Email = msg
 		case "u":
 			if(msg != "") {
+				msg = html.EscapeString(msg)
 				if(c.CurrentUser.Name != "") {
-					Broadcast(Notification{
-						"User " + c.CurrentUser.Name + " is now known as " + msg,
-						"namechange",
-					})
+					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
 				} else {
-					Broadcast(Notification{
-						"User " + msg + " has joined the channel!",
-						"userjoin",
-					})
+					Broadcast(Notification{"User " + msg + " has joined the channel!"})
+					//Broadcast(Command{"userjoin", map[string]string{}}
 				}
 				c.CurrentUser.Name = msg
 			}
