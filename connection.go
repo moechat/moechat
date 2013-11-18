@@ -65,7 +65,7 @@ func (c *connection) reader() {
 		case "v":
 			if(msg != CLIENT_VER) {
 				c.Send(Error{"Client out of date!"})
-				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr)
+				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			}
 		case "m":
