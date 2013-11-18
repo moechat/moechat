@@ -82,13 +82,24 @@ func (c *connection) reader() {
 		case "e": c.CurrentUser.Email = msg
 		case "u":
 			if(msg != "" && msg != c.CurrentUser.Name) {
-				msg = html.EscapeString(msg)
-				if(c.CurrentUser.Name != "") {
-					Broadcast(Command{"namechange", map[string]string{"currname":c.CurrentUser.Name, "email":c.CurrentUser.Email, "newname":msg}})
-					Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
-				}
-				c.CurrentUser.Name = msg
+				break
 			}
+			if(h.usernames[msg]) {
+				num := 1
+				for h.usernames[msg+string(num)] {
+					num += 1
+				}
+				c.Send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+string(num)})
+				c.Send(Command{"fnamechange", map[string]string{"newname":newname}})
+				msg = msg + string(num)
+			}
+			msg = html.EscapeString(msg)
+			if(c.CurrentUser.Name != "") {
+				Broadcast(Command{"namechange", map[string]string{"currname":c.CurrentUser.Name, "email":c.CurrentUser.Email, "newname":msg}})
+				Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
+			}
+			c.CurrentUser.Name = msg
+			h.usernames[msg] = true;
 		}
 		if(die) {
 			break

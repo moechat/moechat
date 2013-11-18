@@ -6,6 +6,7 @@ import (
 
 type hub struct {
 	connections map[*connection]bool
+	usernames map[string]bool
 
 	broadcast chan []byte
 
