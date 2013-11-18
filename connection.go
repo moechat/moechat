@@ -70,7 +70,7 @@ func (c *connection) reader() {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
 			if(msg != CLIENT_VER) {
-				c.Send(Error{"Client out of date!", "outofdate"})
+				c.Send(Error{"outofdate", "Client out of date!"})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			}
@@ -123,10 +123,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		h.unregister <- c
-		Broadcast(Notification{
-			"User " + c.CurrentUser.Name + " has left.",
-			"userleave",
-		})
+		Broadcast(Notification{"User " + c.CurrentUser.Name + " has left."})
 	}()
 	go c.writer()
 	c.reader()
