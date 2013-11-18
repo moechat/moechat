@@ -75,7 +75,7 @@ func (c *connection) reader() {
 				die = true
 			} else {
 				Broadcast(Notification{"User " + c.CurrentUser.Name + " has joined the channel!"})
-				Broadcast(Command{"userjoin", map[string]string{"name":c.CurentUser.Name, "email":c.CurrentUser.Email}})
+				Broadcast(Command{"userjoin", map[string]string{"name":c.CurrentUser.Name, "email":c.CurrentUser.Email}})
 			}
 		case "m":
 			Broadcast(Message{User: c.CurrentUser.Name, Message: msg})
