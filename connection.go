@@ -58,7 +58,6 @@ func (c *connection) reader() {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
-		log.Println("Message: " + string(message))
 		smsg := strings.SplitN(string(message), ":", 2)
 		code, msg := smsg[0], smsg[1]
 		die := false
@@ -124,7 +123,13 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	c := &connection{send: make(chan []byte, 256), CurrentUser: User{"",""}, ws: ws}
 	h.register <- c
-	defer func() { h.unregister <- c }()
+	defer func() {
+		h.unregister <- c
+		Broadcast(Notification{
+			"User " + c.CurrentUser.Name + "has left.",
+			"userleave",
+		})
+	}()
 	go c.writer()
 	c.reader()
 }
