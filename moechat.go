@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var CLIENT_VER = "0.7"
+var CLIENT_VER = "0.8"
 var LOG_FILE = "/var/log/moechat.log"
 var MSG_LOG_FILE = "/root/messages.log"
 var MSG_LOG *os.File
