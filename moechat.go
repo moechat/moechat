@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var CLIENT_VER = "0.8"
+var CLIENT_VER = "0.0.9"
 var LOG_FILE = "/var/log/moechat.log"
 var MSG_LOG_FILE = "/root/messages.log"
 
@@ -52,20 +52,20 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-type MessageLog struct {
-	MsgChan chan *Message
-	NotifChan chan *Notification
+type messageLog struct {
+	msgChan chan *Message
+	notifChan chan *Notification
 }
 
-var msg_logger = MessageLog {
-	MsgChan: make(chan *Message),
-	NotifChan: make(chan *Notification),
+var msg_logger = messageLog {
+	msgChan: make(chan *Message),
+	notifChan: make(chan *Notification),
 }
-func (logger *MessageLog) MessageLogRun(msg_log *log.Logger) {
+func (logger *messageLog) messageLogRun(msg_log *log.Logger) {
 	for {
 		select {
-		case v := <-logger.MsgChan: msg_log.Printf("%s: %s\n", v.User, v.Message)
-		case v := <-logger.NotifChan: msg_log.Printf("<Notification> %s\n", v.NotifBody)
+		case v := <-logger.msgChan: msg_log.Printf("%s: %s\n", v.User, v.Message)
+		case v := <-logger.notifChan: msg_log.Printf("<Notification> %s\n", v.NotifBody)
 		}
 	}
 }
@@ -85,7 +85,7 @@ func initLog() {
 
 	msg_log := log.New(msg_logfile, "", log.LstdFlags)
 
-	go msg_logger.MessageLogRun(msg_log)
+	go msg_logger.messageLogRun(msg_log)
 }
 
 func main() {

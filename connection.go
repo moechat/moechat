@@ -14,10 +14,10 @@ type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 	// User info
-	CurrentUser User
+	user User
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	toSend chan []byte
 }
 
 type Message struct {
@@ -39,10 +39,10 @@ type Command struct {
 	Args map[string]string `json:"args"`
 }
 
-func Broadcast(v interface{}) {
+func broadcast(v interface{}) {
 	switch v := v.(type) {
-	case Message: msg_logger.MsgChan <- &v
-	case Notification: msg_logger.NotifChan <- &v
+	case Message: msg_logger.msgChan <- &v
+	case Notification: msg_logger.notifChan <- &v
 	}
 
 	msg, err := json.Marshal(v);
@@ -53,13 +53,13 @@ func Broadcast(v interface{}) {
 	h.broadcast <- []byte(msg)
 }
 
-func (c *connection) Send(v interface{}) {
+func (c *connection) send(v interface{}) {
 	msg, err := json.Marshal(v);
 	if err != nil {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
 		return
 	}
-	c.send <- []byte(msg)
+	c.toSend <- []byte(msg)
 }
 
 func (c *connection) reader() {
@@ -77,28 +77,28 @@ func (c *connection) reader() {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
 		case "v":
 			if msg != CLIENT_VER {
-				c.Send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
+				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			} else {
-				Broadcast(Notification{"User " + c.CurrentUser.Name + " has joined the channel!"})
-				Broadcast(Command{"userjoin", map[string]string{"name":c.CurrentUser.Name, "email":c.CurrentUser.Email}})
+				broadcast(Notification{"User " + c.user.Name + " has joined the channel!"})
+				broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":c.user.ID}})
 			}
 		case "m":
-			Broadcast(Message{User: c.CurrentUser.Name, Message: msg})
+			broadcast(Message{User: c.user.Name, Message: msg})
 		case "e":
-			c.CurrentUser.Email = msg
-			Broadcast(Command{"emailchange", map[string]string{"name":c.CurrentUser.Name, "email":c.CurrentUser.Email}})
+			c.user.Email = msg
+			broadcast(Command{"emailchange", map[string]string{"id":c.user.ID, "email":msg}})
 		case "u":
-			if msg == "" || msg == c.CurrentUser.Name {
+			if msg == "" || msg == c.user.Name {
 				break
 			}
 			if len(msg) > 30 {
 				msg = msg[:30]
-				c.Send(Notification{"Name is too long, your name will be set to "+msg})
-				c.Send(Command{"fnamechange", map[string]string{"newname":msg}})
+				c.send(Notification{"Name is too long, your name will be set to "+msg})
+				c.send(Command{"fnamechange", map[string]string{"newname":msg}})
 			}
-			delete(h.usernames, c.CurrentUser.Name)
+			delete(h.usernames, c.user.Name)
 			used := h.usernames[msg]
 			if used {
 				num := 1
@@ -107,16 +107,16 @@ func (c *connection) reader() {
 					num += 1
 					nstr = strconv.Itoa(num)
 				}
-				c.Send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr})
-				c.Send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
+				c.send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr})
+				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
 				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
-			if c.CurrentUser.Name != "" {
-				Broadcast(Command{"namechange", map[string]string{"currname":c.CurrentUser.Name, "newname":msg}})
-				Broadcast(Notification{"User " + c.CurrentUser.Name + " is now known as " + msg})
+			if c.user.Name != "" {
+				broadcast(Command{"namechange", map[string]string{"id":c.user.ID, "newname":msg}})
+				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg})
 			}
-			c.CurrentUser.Name = msg
+			c.user.Name = msg
 			h.usernames[msg] = true;
 		}
 		if die {
@@ -127,10 +127,10 @@ func (c *connection) reader() {
 }
 
 func (c *connection) writer() {
-	for message := range c.send {
+	for message := range c.toSend {
 		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			log.Printf("Error sending message to user %s: %v\n", c.CurrentUser.Name, err)
+			log.Printf("Error sending message to user %s: %v\n", c.user.Name, err)
 			break
 		}
 	}
@@ -149,15 +149,15 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error handling /chat request: " + err.Error())
 		return
 	}
-	c := &connection{send: make(chan []byte, 256), CurrentUser: User{"",""}, ws: ws}
+	c := &connection{toSend: make(chan []byte, 256), user: User{"",""}, ws: ws}
 	h.register <- c
 	defer func() {
 		h.unregister <- c
-		if c.CurrentUser.Name == "" {
+		if c.user.Name == "" {
 			return
 		}
-		Broadcast(Command{"userleave", map[string]string{"name":c.CurrentUser.Name}})
-		Broadcast(Notification{"User " + c.CurrentUser.Name + " has left."})
+		broadcast(Command{"userleave", map[string]string{"id":c.user.ID}})
+		broadcast(Notification{"User " + c.user.Name + " has left."})
 	}()
 	go c.writer()
 	c.reader()
@@ -170,7 +170,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	users := []User{}
 
 	for conn, _ := range h.connections {
-		users = append(users, conn.CurrentUser)
+		users = append(users, conn.user)
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
