@@ -94,10 +94,10 @@ func (c *connection) reader() {
 		case 'm':
 			if(c.target != 0) {
 				for oc := range getUser(c.target).connections {
-					oc.send(Message{c.user.Name, msg, c.target})
+					oc.send(Message{c.user.Name, msg, c.user.ID})
 				}
 				for oc := range c.user.connections {
-					oc.send(Message{c.user.Name, msg, getUser(c.target).ID})
+					oc.send(Message{c.user.Name, msg, c.target})
 				}
 			} else {
 				broadcast(Message{c.user.Name, msg, 0})
