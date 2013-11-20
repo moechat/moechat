@@ -1,7 +1,7 @@
 package main
 
 import (
-	"labix.org/v2/mgo"
+//	"labix.org/v2/mgo"
 //	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
@@ -20,7 +20,7 @@ type messageLog struct {
 
 var msgLogChan = make(chan messageLog)
 
-func messageLogRun(msgLogDB *mgo.Database, logger chan messageLog) {
+/*func messageLogRun(msgLogDB *mgo.Database, logger chan messageLog) {
 	for {
 		select {
 		case _ = <-logger:
@@ -28,7 +28,7 @@ func messageLogRun(msgLogDB *mgo.Database, logger chan messageLog) {
 		}
 	}
 }
-
+*/
 func initLog() {
 	logfile, err := os.OpenFile(LogFile, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
@@ -37,11 +37,11 @@ func initLog() {
 
 	log.SetOutput(logfile)
 
-	mongoSession, err := mgo.Dial(mongoURL)
+/*	mongoSession, err := mgo.Dial(mongoURL)
 	if err != nil {
 		log.Fatal("Error opening mongo DB: %v", err)
 	}
 
 	msgLogDB := mongoSession.DB(messageLogDB)
-	go messageLogRun(msgLogDB, msgLogChan)
+	go messageLogRun(msgLogDB, msgLogChan)*/
 }
