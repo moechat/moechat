@@ -2,7 +2,7 @@ package main
 
 import (
 	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+//	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
 )
@@ -13,7 +13,7 @@ var mongoURL = "localhost"
 var messageLogDB = "message_log_db"
 
 type messageLog struct {
-	Id bson.ObjectId
+//	Id bson.ObjectId
 	Msg *interface{}
 	Room *ChatRoom
 }
