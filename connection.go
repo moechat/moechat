@@ -168,6 +168,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	c.user.connections[c] = true
 	h.register <- c
+	c.send(Command{"idset", map[string]string{"id":c.user.id}})
 	defer func() {
 		h.unregister <- c
 		if c.user.Name == "" {
