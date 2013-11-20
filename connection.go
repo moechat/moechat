@@ -62,7 +62,13 @@ func (c *connection) send(v interface{}) {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
 		return
 	}
-	c.toSend <- []byte(msg)
+	select {
+	case c.toSend <- []byte(msg):
+	default:
+		delete(h.connections, c)
+		close(c.toSend)
+		go c.ws.Close()
+	}
 }
 
 func (c *connection) reader() {
