@@ -22,15 +22,26 @@ type connection struct {
 	toSend chan []byte
 }
 
+var nextChatRoomId = 1
+type ChatRoom struct {
+	Id int
+	Users map[*User]bool
+	Type string
+	Name string
+}
+
+var pmRooms map[*User]map[*User]*ChatRoom
+var chatRooms []*ChatRoom = []*ChatRoom{lobby}
+
 type Message struct {
 	Sender string `json:"user"`
 	Body string `json:"msg"`
-	Target int `json:"target"`
+	Targets []int `json:"targets,omitempty"`
 }
 
 type Notification struct {
 	NotifBody string `json:"notif"`
-	Target int `json:"target"`
+	Targets []int `json:"targets,omitempty"`
 }
 
 type Error struct {
@@ -44,11 +55,6 @@ type Command struct {
 }
 
 func broadcast(v interface{}) {
-	switch v := v.(type) {
-	case Message: msg_logger.msgChan <- &v
-	case Notification: msg_logger.notifChan <- &v
-	}
-
 	msg, err := json.Marshal(v);
 	if err != nil {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
@@ -86,15 +92,16 @@ func (c *connection) reader() {
 		switch code {
 		default: log.Println("Code is not one of m, e, v and u. Code is: " + string(code))
 		case 'v':
-			if msg != CLIENT_VER {
+			if msg != ClientVer {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			} else {
 				if len(c.user.connections) == 1 {
 					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
-					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", 0})
-					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", c.user.ID})
+					broadcast(Notification{
+						"User "+c.user.Name+" has joined the channel!",
+						[]int{0, c.user.ID}})
 				}
 			}
 		case 't':
@@ -105,13 +112,13 @@ func (c *connection) reader() {
 		case 'm':
 			if(c.target != 0) {
 				for oc := range getUser(c.target).connections {
-					oc.send(Message{c.user.Name, msg, c.user.ID})
+					oc.send(Message{c.user.Name, msg, []int{c.user.ID}})
 				}
 				for oc := range c.user.connections {
-					oc.send(Message{c.user.Name, msg, c.target})
+					oc.send(Message{c.user.Name, msg, []int{c.target}})
 				}
 			} else {
-				broadcast(Message{c.user.Name, msg, 0})
+				broadcast(Message{Sender: c.user.Name, Body: msg})
 			}
 		case 'e':
 			c.user.Email = msg
@@ -120,11 +127,13 @@ func (c *connection) reader() {
 			if msg == "" || msg == c.user.Name {
 				break
 			}
+
 			if len(msg) > 30 {
 				msg = msg[:30]
-				c.send(Notification{"Name is too long, your name will be set to "+msg, -1})
+				c.send(Notification{NotifBody: "Name is too long, your name will be set to "+msg})
 				c.send(Command{"fnamechange", map[string]string{"newname":msg}})
 			}
+
 			delete(h.usernames, c.user.Name)
 			used := h.usernames[msg]
 			if used {
@@ -134,15 +143,16 @@ func (c *connection) reader() {
 					num += 1
 					nstr = strconv.Itoa(num)
 				}
-				c.send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr, -1})
+				c.send(Notification{NotifBody: "Name "+msg+" is taken, your name will be set to "+msg+nstr})
 				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
 				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
 			if c.user.Name != "" {
 				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
-				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg, 0})
-				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg, c.user.ID})
+				broadcast(Notification{
+					"User " + c.user.Name + " is now known as " + msg,
+					[]int{0, c.user.ID}})
 			}
 			c.user.Name = msg
 			h.usernames[msg] = true;
@@ -186,8 +196,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		if c.user.Name != "" && len(c.user.connections) == 1 {
-			broadcast(Notification{"User " + c.user.Name + " has left.", 0})
-			broadcast(Notification{"User " + c.user.Name + " has left.", c.user.ID})
+			broadcast(Notification{
+				"User " + c.user.Name + " has left.",
+				[]int{0, c.user.ID}})
 			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 		}
 		h.unregister <- c

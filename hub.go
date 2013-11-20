@@ -23,8 +23,9 @@ var h = hub {
 	usernames: make(map[string]bool),
 }
 
-var nextID = 1
+var lobby = &ChatRoom{0, make(map[*User]bool), "", "lobby"}
 
+var nextID = 1
 func (h *hub) run() {
 	for {
 		select {
