@@ -187,7 +187,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if c.user.Name != "" && len(c.user.connections) == 1 {
 			broadcast(Notification{"User " + c.user.Name + " has left.", 0})
-			broadcast(Notification{"User " + c.user.Name + " has left.", 0})
+			broadcast(Notification{"User " + c.user.Name + " has left.", c.user.ID})
 			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 		}
 		h.unregister <- c
