@@ -118,7 +118,7 @@ func (c *connection) reader() {
 					oc.send(Message{c.user.Name, msg, []int{c.target}})
 				}
 			} else {
-				broadcast(Message{Sender: c.user.Name, Body: msg})
+				broadcast(Message{c.user.Name, msg, []int{0}})
 			}
 		case 'e':
 			c.user.Email = msg
