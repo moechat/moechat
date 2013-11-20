@@ -92,9 +92,9 @@ func (c *connection) reader() {
 				die = true
 			} else {
 				if len(c.user.connections) == 1 {
+					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
 					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", 0})
 					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", c.user.ID})
-					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
 				}
 			}
 		case 't':
@@ -190,8 +190,9 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if len(c.user.connections) == 0 {
+			broadcast(Notification{"User " + c.user.Name + " has left.", 0})
+			broadcast(Notification{"User " + c.user.Name + " has left.", 0})
 			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
-			broadcast(Notification{"User " + c.user.Name + " has left.", c.user.ID})
 		}
 	}()
 	go c.writer()
