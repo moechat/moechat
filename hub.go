@@ -28,8 +28,9 @@ func (h *hub) run() {
 	for {
 		select {
 		case c := <-h.register:
-			h.connections[c] = nextID
+			c.user.ID = nextID
 			nextID += 1
+			h.connections[c] = c.user.ID
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
 			if(c.user.Name != "") {

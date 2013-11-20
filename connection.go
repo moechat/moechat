@@ -82,13 +82,13 @@ func (c *connection) reader() {
 				die = true
 			} else {
 				broadcast(Notification{"User " + c.user.Name + " has joined the channel!"})
-				broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":c.user.ID}})
+				broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
 			}
 		case "m":
 			broadcast(Message{User: c.user.Name, Message: msg})
 		case "e":
 			c.user.Email = msg
-			broadcast(Command{"emailchange", map[string]string{"id":c.user.ID, "email":msg}})
+			broadcast(Command{"emailchange", map[string]string{"id":strconv.Itoa(c.user.ID), "email":msg}})
 		case "u":
 			if msg == "" || msg == c.user.Name {
 				break
@@ -113,7 +113,7 @@ func (c *connection) reader() {
 			}
 			msg = html.EscapeString(msg)
 			if c.user.Name != "" {
-				broadcast(Command{"namechange", map[string]string{"id":c.user.ID, "newname":msg}})
+				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
 				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg})
 			}
 			c.user.Name = msg
@@ -149,14 +149,14 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error handling /chat request: " + err.Error())
 		return
 	}
-	c := &connection{toSend: make(chan []byte, 256), user: User{"",""}, ws: ws}
+	c := &connection{toSend: make(chan []byte, 256), user: User{"","",0}, ws: ws}
 	h.register <- c
 	defer func() {
 		h.unregister <- c
 		if c.user.Name == "" {
 			return
 		}
-		broadcast(Command{"userleave", map[string]string{"id":c.user.ID}})
+		broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 		broadcast(Notification{"User " + c.user.Name + " has left."})
 	}()
 	go c.writer()
