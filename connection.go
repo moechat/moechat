@@ -99,8 +99,9 @@ func (c *connection) reader() {
 				for oc := range c.user.connections {
 					oc.send(Message{c.user.Name, msg, getUser(c.target).ID})
 				}
+			} else {
+				broadcast(Message{c.user.Name, msg, 0})
 			}
-			broadcast(Message{c.user.Name, msg, 0})
 		case 'e':
 			c.user.Email = msg
 			broadcast(Command{"emailchange", map[string]string{"id":strconv.Itoa(c.user.ID), "email":msg}})
