@@ -22,7 +22,7 @@ var h = hub {
 	usernames: make(map[string]bool),
 }
 
-var nextID = 0
+var nextID = 1
 
 func (h *hub) run() {
 	for {
@@ -31,6 +31,7 @@ func (h *hub) run() {
 			c.user.ID = nextID
 			nextID += 1
 			h.connections[c] = c.user.ID
+			usersByID[c.user.ID] = c.user
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
 			if(c.user.Name != "") {

@@ -64,7 +64,7 @@ var msg_logger = messageLog {
 func (logger *messageLog) messageLogRun(msg_log *log.Logger) {
 	for {
 		select {
-		case v := <-logger.msgChan: msg_log.Printf("%s: %s\n", v.User, v.Message)
+		case v := <-logger.msgChan: msg_log.Printf("%s: %s\n", v.Sender, v.Body)
 		case v := <-logger.notifChan: msg_log.Printf("<Notification> %s\n", v.NotifBody)
 		}
 	}

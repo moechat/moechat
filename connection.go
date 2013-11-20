@@ -14,15 +14,18 @@ type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 	// User info
-	user User
+	user *User
+
+	target int
 
 	// Buffered channel of outbound messages.
 	toSend chan []byte
 }
 
 type Message struct {
-	User string `json:"user"`
-	Message string `json:"msg"`
+	Sender string `json:"user"`
+	Body string `json:"msg"`
+	Target int `json:"target"`
 }
 
 type Notification struct {
@@ -70,12 +73,11 @@ func (c *connection) reader() {
 			break
 		}
 		log.Printf("Receiving message: %s", string(message))
-		smsg := strings.SplitN(string(message), ":", 2)
-		code, msg := smsg[0], smsg[1]
+		code, msg := message[0], string(message[1:])
 		die := false
 		switch code {
-		default: log.Println("Code is not one of m, e, v and u. Code is: " + code)
-		case "v":
+		default: log.Println("Code is not one of m, e, v and u. Code is: " + string(code))
+		case 'v':
 			if msg != CLIENT_VER {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
@@ -84,12 +86,22 @@ func (c *connection) reader() {
 				broadcast(Notification{"User " + c.user.Name + " has joined the channel!"})
 				broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
 			}
-		case "m":
-			broadcast(Message{User: c.user.Name, Message: msg})
-		case "e":
+		case 't':
+			c.target, err = strconv.Atoi(msg)
+			if(err != nil) {
+				log.Printf("Error setting target: %v", err)
+			}
+		case 'm':
+			if(c.target != 0) {
+				for oc := range getUser(c.target).connections {
+					oc.send(Message{c.user.Name, msg, c.target})
+				}
+			}
+			broadcast(Message{c.user.Name, msg, 0})
+		case 'e':
 			c.user.Email = msg
 			broadcast(Command{"emailchange", map[string]string{"id":strconv.Itoa(c.user.ID), "email":msg}})
-		case "u":
+		case 'u':
 			if msg == "" || msg == c.user.Name {
 				break
 			}
@@ -149,7 +161,12 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error handling /chat request: " + err.Error())
 		return
 	}
-	c := &connection{toSend: make(chan []byte, 256), user: User{"","",0}, ws: ws}
+	c := &connection{
+		toSend: make(chan []byte, 256),
+		user: &User{connections: make(map[*connection]bool)},
+		ws: ws,
+	}
+	c.user.connections[c] = true
 	h.register <- c
 	defer func() {
 		h.unregister <- c
@@ -167,7 +184,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	log.Println("Handling request to /users from ip " + ip)
 
-	users := []User{}
+	users := []*User{}
 
 	for conn, _ := range h.connections {
 		users = append(users, conn.user)
