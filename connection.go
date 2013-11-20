@@ -127,7 +127,7 @@ func (c *connection) reader() {
 				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
-			if c.user.Name != nil {
+			if c.user.Name != "" {
 				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
 				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg})
 			}
@@ -173,7 +173,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		h.unregister <- c
-		if c.user.Name == nil {
+		if c.user.Name == "" {
 			return
 		}
 		broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
