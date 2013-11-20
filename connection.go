@@ -30,6 +30,7 @@ type Message struct {
 
 type Notification struct {
 	NotifBody string `json:"notif"`
+	Target int `json:"target"`
 }
 
 type Error struct {
@@ -90,8 +91,11 @@ func (c *connection) reader() {
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				die = true
 			} else {
-				broadcast(Notification{"User " + c.user.Name + " has joined the channel!"})
-				broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
+				if len(c.user.connections) == 1 {
+					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", 0})
+					broadcast(Notification{"User " + c.user.Name + " has joined the channel!", c.user.ID})
+					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
+				}
 			}
 		case 't':
 			c.target, err = strconv.Atoi(msg)
@@ -118,7 +122,7 @@ func (c *connection) reader() {
 			}
 			if len(msg) > 30 {
 				msg = msg[:30]
-				c.send(Notification{"Name is too long, your name will be set to "+msg})
+				c.send(Notification{"Name is too long, your name will be set to "+msg, -1})
 				c.send(Command{"fnamechange", map[string]string{"newname":msg}})
 			}
 			delete(h.usernames, c.user.Name)
@@ -130,14 +134,15 @@ func (c *connection) reader() {
 					num += 1
 					nstr = strconv.Itoa(num)
 				}
-				c.send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr})
+				c.send(Notification{"Name "+msg+" is taken, your name will be set to "+msg+nstr, -1})
 				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
 				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
 			if c.user.Name != "" {
 				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
-				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg})
+				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg, 0})
+				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg, c.user.ID})
 			}
 			c.user.Name = msg
 			h.usernames[msg] = true;
@@ -184,8 +189,10 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		if c.user.Name == "" {
 			return
 		}
-		broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
-		broadcast(Notification{"User " + c.user.Name + " has left."})
+		if len(c.user.connections) == 0 {
+			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
+			broadcast(Notification{"User " + c.user.Name + " has left.", c.user.ID})
+		}
 	}()
 	go c.writer()
 	c.reader()
