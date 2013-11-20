@@ -48,6 +48,7 @@ func (h *hub) run() {
 				case c.toSend <- m:
 				default:
 					delete(h.connections, c)
+					delete(c.user.connections, c)
 					close(c.toSend)
 					go c.ws.Close()
 				}

@@ -66,6 +66,7 @@ func (c *connection) send(v interface{}) {
 	case c.toSend <- []byte(msg):
 	default:
 		delete(h.connections, c)
+		delete(c.user.connections, c)
 		close(c.toSend)
 		go c.ws.Close()
 	}
