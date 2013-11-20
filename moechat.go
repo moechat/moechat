@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 	"log"
 	"os"
@@ -11,27 +12,44 @@ var CLIENT_VER = "0.10"
 var LOG_FILE = "/var/log/moechat.log"
 var MSG_LOG_FILE = "/root/messages.log"
 
+type App struct {
+	Version string
+}
+
+var moechat = App{CLIENT_VER}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
 	if ip == "54.227.38.194" {
 		return
 	}
 	log.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
-	name := "/srv/chat/index.html"
-	if r.URL.Path != "/" {
-		name = "/srv/chat" + r.URL.Path
+	if r.URL.Path == "/" {
+		name := "/srv/chat/index.html"
+		t, err := template.ParseFiles(name)
+		if err != nil {
+			errorHandler(w, r, err)
+			return
+		}
+		err = t.Execute(w, moechat)
+		if err != nil {
+			errorHandler(w, r, err)
+			return
+		}
+	} else {
+		name := "/srv/chat" + r.URL.Path
+		file, err := os.Open(name)
+		if err != nil {
+			errorHandler(w, r, err)
+			return
+		}
+		finfo, err := file.Stat()
+		if err != nil {
+			errorHandler(w, r, err)
+			return
+		}
+		http.ServeContent(w, r, name, finfo.ModTime(), file)
 	}
-	file, err := os.Open(name)
-	if err != nil {
-		errorHandler(w, r, err)
-		return
-	}
-	finfo, err := file.Stat()
-	if err != nil {
-		errorHandler(w, r, err)
-		return
-	}
-	http.ServeContent(w, r, name, finfo.ModTime(), file)
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
