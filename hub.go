@@ -32,6 +32,7 @@ func (h *hub) run() {
 			nextID += 1
 			h.connections[c] = c.user.ID
 			usersByID[c.user.ID] = c.user
+			c.send(Command{"idset", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
 			if(c.user.Name != "") {
