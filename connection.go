@@ -96,6 +96,7 @@ func (c *connection) reader() {
 				for oc := range getUser(c.target).connections {
 					oc.send(Message{c.user.Name, msg, c.target})
 				}
+				c.send(Message{c.user.Name, msg, getUser(c.target).ID})
 			}
 			broadcast(Message{c.user.Name, msg, 0})
 		case 'e':
@@ -124,7 +125,7 @@ func (c *connection) reader() {
 				msg = msg + nstr
 			}
 			msg = html.EscapeString(msg)
-			if c.user.Name != "" {
+			if c.user.Name != nil {
 				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
 				broadcast(Notification{"User " + c.user.Name + " is now known as " + msg})
 			}
@@ -170,7 +171,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		h.unregister <- c
-		if c.user.Name == "" {
+		if c.user.Name == nil {
 			return
 		}
 		broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
