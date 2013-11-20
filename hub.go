@@ -40,6 +40,7 @@ func (h *hub) run() {
 				log.Printf("User %s (ip %s) has left.", c.user.Name, c.ws.RemoteAddr())
 			}
 			delete(h.connections, c)
+			delete(c.user.connections, c)
 			delete(h.usernames, c.user.Name)
 			close(c.toSend)
 		case m := <-h.broadcast:
