@@ -55,9 +55,6 @@ func (h *hub) run() {
 					c.ping()
 				} else {
 					log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
-					delete(h.connections, c)
-					delete(c.user.connections, c)
-					close(c.toSend)
 					go c.ws.Close()
 				}
 			}

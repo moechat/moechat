@@ -92,7 +92,6 @@ func (c *connection) reader() {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
-		log.Printf("Receiving message: %s", string(message))
 		code, msg := message[0], string(message[1:])
 		die := false
 		switch code {
@@ -204,12 +203,14 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	h.register <- c
 	defer func() {
 		if c.user.Name != "" && len(c.user.connections) == 1 {
+			h.unregister <- c
 			broadcast(Notification{
 				"User " + c.user.Name + " has left.",
 				[]int{0, c.user.ID}})
 			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
+		} else {
+			h.unregister <- c
 		}
-		h.unregister <- c
 	}()
 	go c.writer()
 	c.reader()
