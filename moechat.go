@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var ClientVer = "0.11"
+var ClientVer = "0.12"
 
 type App struct {
 	Version string

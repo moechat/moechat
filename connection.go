@@ -15,11 +15,12 @@ type connection struct {
 	ws *websocket.Conn
 	// User info
 	user *User
-
 	target int
 
 	// Buffered channel of outbound messages.
 	toSend chan []byte
+
+	pongReceived bool
 }
 
 var nextChatRoomId = 1
@@ -79,6 +80,11 @@ func (c *connection) send(v interface{}) {
 	}
 }
 
+func (c *connection) ping() {
+	c.pongReceived = false
+	c.toSend <- []byte{'p'}
+}
+
 func (c *connection) reader() {
 	for {
 		_, message, err := c.ws.ReadMessage()
@@ -90,7 +96,8 @@ func (c *connection) reader() {
 		code, msg := message[0], string(message[1:])
 		die := false
 		switch code {
-		default: log.Println("Code is not one of m, e, v and u. Code is: " + string(code))
+		default: log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
+		case 'p': c.pongReceived = true
 		case 'v':
 			if msg != ClientVer {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
@@ -191,6 +198,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		toSend: make(chan []byte, 256),
 		user: &User{connections: make(map[*connection]bool)},
 		ws: ws,
+		pongReceived: true,
 	}
 	c.user.connections[c] = true
 	h.register <- c

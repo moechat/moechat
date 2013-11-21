@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strconv"
+	"time"
 )
 
 type hub struct {
@@ -13,6 +14,8 @@ type hub struct {
 
 	register chan *connection
 	unregister chan *connection
+
+	timeoutTicker *time.Ticker
 }
 
 var h = hub {
@@ -21,6 +24,8 @@ var h = hub {
 	unregister:  make(chan *connection),
 	connections: make(map[*connection]int),
 	usernames: make(map[string]bool),
+
+	timeoutTicker: time.NewTicker(10 * time.Second),
 }
 
 var lobby = &ChatRoom{0, make(map[*User]bool), "", "lobby"}
@@ -44,6 +49,15 @@ func (h *hub) run() {
 			delete(c.user.connections, c)
 			delete(h.usernames, c.user.Name)
 			close(c.toSend)
+		case <-h.timeoutTicker.C:
+			for c := range h.connections {
+				if(c.pongReceived) {
+					c.ping()
+				} else {
+					log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
+					h.unregister <- c;
+				}
+			}
 		case m := <-h.broadcast:
 			for c := range h.connections {
 				select {
