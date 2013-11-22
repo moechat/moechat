@@ -101,6 +101,7 @@ func (c *connection) reader() {
 			if msg != ClientVer {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
+				c.user.Name = ""
 				die = true
 			} else {
 				if len(c.user.connections) == 1 {
