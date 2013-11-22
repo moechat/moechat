@@ -104,7 +104,7 @@ ReadLoop:
 		}
 		code, msg := message[0], string(message[1:])
 		if(code != 'p') {
-			log.Printf("Receiving message %s: %s", code, string(msg))
+			log.Printf("Receiving message %s: %s", string(code), string(msg))
 		}
 		die := false
 		switch code {
@@ -154,6 +154,7 @@ ReadLoop:
 						"User "+c.user.Name+" has joined the channel!",
 						[]int{0, c.user.ID}})
 				}
+				c.state = joinedChannel
 			} else if msg == "" || msg == c.user.Name || c.state != joinedChannel {
 				break
 			}
