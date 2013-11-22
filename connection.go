@@ -158,7 +158,7 @@ ReadLoop:
 			} else if c.state != joinedChannel {
 				log.Printf("User %s (ip %s) attempted to send a message before joining", c.user.Name, c.ws.RemoteAddr())
 				break ReadLoop
-			} else if msg == "" || msg == c.user.Name || {
+			} else if msg == "" || msg == c.user.Name {
 				break
 			}
 
