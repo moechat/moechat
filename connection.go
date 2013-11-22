@@ -147,15 +147,7 @@ ReadLoop:
 						"email":msg}})
 			}
 		case 'u':
-			if(c.state == versionChecked) {
-				if len(c.user.connections) == 1 {
-					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
-					broadcast(Notification{
-						"User "+c.user.Name+" has joined the channel!",
-						[]int{0, c.user.ID}})
-				}
-				c.state = joinedChannel
-			} else if c.state != joinedChannel {
+			if c.state != joinedChannel {
 				log.Printf("User %s (ip %s) attempted to send a message before joining", c.user.Name, c.ws.RemoteAddr())
 				break ReadLoop
 			} else if msg == "" || msg == c.user.Name {
@@ -189,7 +181,20 @@ ReadLoop:
 					[]int{0, c.user.ID}})
 			}
 			c.user.Name = msg
-			h.usernames[msg] = true;
+			h.usernames[msg] = true
+
+			if c.state == versionChecked {
+				if len(c.user.connections) == 1 {
+					broadcast(Command{"userjoin",
+						map[string]string{
+							"name":c.user.Name,
+							"email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
+					broadcast(Notification{
+						"User "+c.user.Name+" has joined the channel!",
+						[]int{0, c.user.ID}})
+				}
+				c.state = joinedChannel
+			}
 		}
 
 		if die {
