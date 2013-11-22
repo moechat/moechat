@@ -171,7 +171,8 @@ ReadLoop:
 					nstr = strconv.Itoa(num)
 				}
 				c.send(Notification{NotifBody: "Name "+msg+" is taken, your name will be set to "+msg+nstr})
-				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
+				c.send(Command{"fnamechange", map[string]string{
+					"newname":html.UnescapeString(msg)+nstr}})
 				msg = msg + nstr
 			}
 			if c.user.Name != "" {
