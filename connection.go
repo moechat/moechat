@@ -44,7 +44,7 @@ var pmRooms map[*User]map[*User]*ChatRoom
 var chatRooms []*ChatRoom = []*ChatRoom{lobby}
 
 type Message struct {
-	Sender string `json:"user"`
+	Sender int `json:"user"`
 	Body string `json:"msg"`
 	Targets []int `json:"targets,omitempty"`
 }
@@ -130,13 +130,13 @@ ReadLoop:
 
 			if(c.target != 0) {
 				for oc := range getUser(c.target).connections {
-					oc.send(Message{c.user.Name, msg, []int{c.user.ID}})
+					oc.send(Message{c.user.ID, msg, []int{c.user.ID}})
 				}
 				for oc := range c.user.connections {
-					oc.send(Message{c.user.Name, msg, []int{c.target}})
+					oc.send(Message{c.user.ID, msg, []int{c.target}})
 				}
 			} else {
-				broadcast(Message{c.user.Name, msg, []int{0}})
+				broadcast(Message{c.user.ID, msg, []int{0}})
 			}
 		case 'e':
 			c.user.Email = msg
