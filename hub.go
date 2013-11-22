@@ -42,9 +42,12 @@ func (h *hub) run() {
 			c.send(Command{"idset", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
-			if(c.user.Name != "") {
+			if(c.state == joinedChannel) {
 				log.Printf("User %s (ip %s) has left.", c.user.Name, c.ws.RemoteAddr())
+			} else if(c.state == closed) {
+				break
 			}
+			c.state = closed
 			delete(h.connections, c)
 			delete(c.user.connections, c)
 			delete(h.usernames, c.user.Name)
@@ -54,8 +57,11 @@ func (h *hub) run() {
 				if(c.pongReceived) {
 					c.ping()
 				} else {
-					log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
-					go c.ws.Close()
+					if(c.state == joinedChannel) {
+						log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
+					}
+					c.state = closed
+					h.unregister <- c
 				}
 			}
 		case m := <-h.broadcast:

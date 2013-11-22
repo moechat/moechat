@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+const (
+	connected byte = 0
+	versionChecked byte = 1
+	joinedChannel byte = 2
+	closed byte = 3
+)
+
 type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
@@ -21,6 +28,8 @@ type connection struct {
 	toSend chan []byte
 
 	pongReceived bool
+
+	state byte
 }
 
 var nextChatRoomId = 1
@@ -86,13 +95,17 @@ func (c *connection) ping() {
 }
 
 func (c *connection) reader() {
-	for {
+ReadLoop:
+	for c.state != closed {
 		_, message, err := c.ws.ReadMessage()
 		if err != nil {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
 		code, msg := message[0], string(message[1:])
+		if(code != 'p') {
+			log.Printf("Receiving message %s: %s", code, string(msg))
+		}
 		die := false
 		switch code {
 		default: log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
@@ -100,17 +113,10 @@ func (c *connection) reader() {
 		case 'v':
 			if msg != ClientVer {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
-				broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
-				c.user.Name = ""
-				die = true
+				break ReadLoop
 			} else {
-				if len(c.user.connections) == 1 {
-					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
-					broadcast(Notification{
-						"User "+c.user.Name+" has joined the channel!",
-						[]int{0, c.user.ID}})
-				}
+				c.state = versionChecked
 			}
 		case 't':
 			c.target, err = strconv.Atoi(msg)
@@ -118,6 +124,10 @@ func (c *connection) reader() {
 				log.Printf("Error setting target: %v", err)
 			}
 		case 'm':
+			if c.state != joinedChannel {
+				break
+			}
+
 			if(c.target != 0) {
 				for oc := range getUser(c.target).connections {
 					oc.send(Message{c.user.Name, msg, []int{c.user.ID}})
@@ -130,9 +140,21 @@ func (c *connection) reader() {
 			}
 		case 'e':
 			c.user.Email = msg
-			broadcast(Command{"emailchange", map[string]string{"id":strconv.Itoa(c.user.ID), "email":msg}})
+			if(c.state == joinedChannel) {
+				broadcast(Command{"emailchange",
+					map[string]string{
+						"id":strconv.Itoa(c.user.ID),
+						"email":msg}})
+			}
 		case 'u':
-			if msg == "" || msg == c.user.Name {
+			if(c.state == versionChecked) {
+				if len(c.user.connections) == 1 {
+					broadcast(Command{"userjoin", map[string]string{"name":c.user.Name, "email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
+					broadcast(Notification{
+						"User "+c.user.Name+" has joined the channel!",
+						[]int{0, c.user.ID}})
+				}
+			} else if msg == "" || msg == c.user.Name || c.state != joinedChannel {
 				break
 			}
 
@@ -165,6 +187,7 @@ func (c *connection) reader() {
 			c.user.Name = msg
 			h.usernames[msg] = true;
 		}
+
 		if die {
 			break
 		}
@@ -174,6 +197,10 @@ func (c *connection) reader() {
 
 func (c *connection) writer() {
 	for message := range c.toSend {
+		if c.state == closed {
+			break
+		}
+
 		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
 			log.Printf("Error sending message to user %s: %v\n", c.user.Name, err)
