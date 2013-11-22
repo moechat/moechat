@@ -147,6 +147,7 @@ ReadLoop:
 						"email":msg}})
 			}
 		case 'u':
+			msg = html.EscapeString(strings.TrimSpace(msg))
 			if c.state < versionChecked {
 				log.Printf("User %s (ip %s) attempted to set a name before version checking", c.user.Name, c.ws.RemoteAddr())
 				break ReadLoop
@@ -173,7 +174,6 @@ ReadLoop:
 				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
 				msg = msg + nstr
 			}
-			msg = html.EscapeString(msg)
 			if c.user.Name != "" {
 				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
 				broadcast(Notification{
