@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
-	"html"
 	"log"
 	"net/http"
 	"strconv"
@@ -147,7 +146,7 @@ ReadLoop:
 						"email":msg}})
 			}
 		case 'u':
-			msg = html.EscapeString(strings.TrimSpace(msg))
+			msg = strings.TrimSpace(msg)
 			if c.state < versionChecked {
 				log.Printf("User %s (ip %s) attempted to set a name before version checking", c.user.Name, c.ws.RemoteAddr())
 				break ReadLoop
@@ -171,8 +170,7 @@ ReadLoop:
 					nstr = strconv.Itoa(num)
 				}
 				c.send(Notification{NotifBody: "Name "+msg+" is taken, your name will be set to "+msg+nstr})
-				c.send(Command{"fnamechange", map[string]string{
-					"newname":html.UnescapeString(msg)+nstr}})
+				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
 				msg = msg + nstr
 			}
 			if c.user.Name != "" {
