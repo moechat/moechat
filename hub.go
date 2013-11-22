@@ -61,7 +61,10 @@ func (h *hub) run() {
 						log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
 					}
 					c.state = closed
-					h.unregister <- c
+					delete(h.connections, c)
+					delete(c.user.connections, c)
+					delete(h.usernames, c.user.Name)
+					close(c.toSend)
 				}
 			}
 		case m := <-h.broadcast:

@@ -155,7 +155,10 @@ ReadLoop:
 						[]int{0, c.user.ID}})
 				}
 				c.state = joinedChannel
-			} else if msg == "" || msg == c.user.Name || c.state != joinedChannel {
+			} else if c.state != joinedChannel {
+				log.Printf("User %s (ip %s) attempted to send a message before joining", c.user.Name, c.ws.RemoteAddr())
+				break ReadLoop
+			} else if msg == "" || msg == c.user.Name || {
 				break
 			}
 
@@ -232,7 +235,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	c.user.connections[c] = true
 	h.register <- c
 	defer func() {
-		if c.user.Name != "" && len(c.user.connections) == 1 {
+		if c.state == joinedChannel && len(c.user.connections) == 1 {
 			h.unregister <- c
 			broadcast(Notification{
 				"User " + c.user.Name + " has left.",
