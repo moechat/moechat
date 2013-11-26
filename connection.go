@@ -1,8 +1,10 @@
 package main
 
 import (
+	//"code.google.com/p/go.crypto/otr"
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/moechat/moeparser"
 	"log"
 	"net/http"
 	"strconv"
@@ -119,12 +121,17 @@ ReadLoop:
 			}
 		case 't':
 			c.target, err = strconv.Atoi(msg)
-			if(err != nil) {
-				log.Printf("Error setting target: %v", err)
+			if err != nil {
+				log.Println("Error setting target:", err)
 			}
 		case 'm':
 			if c.state != joinedChannel {
 				break
+			}
+
+			msg, err = moeparser.Parse(msg)
+			if err != nil {
+				log.Println("Error parsing message:", err)
 			}
 
 			if(c.target != 0) {
