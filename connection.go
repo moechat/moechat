@@ -112,7 +112,7 @@ ReadLoop:
 		default: log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
 		case 'p': c.pongReceived = true
 		case 'v':
-			if msg != ClientVer {
+			if msg != ClientVer && msg != "0.13" {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="//moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				break ReadLoop
