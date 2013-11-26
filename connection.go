@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	connected byte = 0
-	versionChecked byte = 1
-	joinedChannel byte = 2
-	closed byte = 3
+	connected byte = iota
+	versionChecked byte = iota
+	joinedChannel byte = iota
+	authenticated byte = iota
+	closed byte = iota
 )
 
 type connection struct {
@@ -112,7 +113,7 @@ ReadLoop:
 		default: log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
 		case 'p': c.pongReceived = true
 		case 'v':
-			if msg != ClientVer && msg != "0.13" {
+			if msg != config.Version && msg != "0.13" {
 				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="//moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				break ReadLoop
@@ -201,6 +202,8 @@ ReadLoop:
 				}
 				c.state = joinedChannel
 			}
+		case 's':
+
 		}
 
 		if die {

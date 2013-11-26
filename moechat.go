@@ -8,22 +8,17 @@ import (
 	"strings"
 )
 
-var ClientVer = "0.0.14"
-
-type App struct {
-	Version string
-}
-
-var moechat = App{ClientVer}
+var moechat struct{Version string}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr,":")[0]
-	if ip == "54.227.38.194" {
+	if ok := config.BlockedIPs[ip]; ok {
 		return
 	}
+
 	log.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
 	if r.URL.Path == "/" {
-		name := "/srv/chat/index.html"
+		name := config.ServerRoot + "/index.html"
 		t, err := template.ParseFiles(name)
 		if err != nil {
 			errorHandler(w, r, err)
@@ -35,7 +30,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		name := "/srv/chat" + r.URL.Path
+		name := config.ServerRoot + r.URL.Path
 		file, err := os.Open(name)
 		if err != nil {
 			errorHandler(w, r, err)
@@ -53,7 +48,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	log.Println("Error handling request: " + err.Error())
 	if os.IsNotExist(err) {
-		name := "/srv/chat/404.html"
+		name := config.ServerRoot + "/404.html"
 		file, err := os.Open(name)
 		if err != nil {
 			log.Println("Error opening 404: " + err.Error())
@@ -69,6 +64,10 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func main() {
+	parseConf()
+
+	moechat = struct{Version string}{config.Version}
+
 	initLog()
 	log.Println("Starting MoeChat!\n")
 

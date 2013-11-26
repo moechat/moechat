@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-var LogFile = "/var/log/moechat.log"
-
-var mongoURL = "localhost"
-var messageLogDB = "message_log_db"
-
 type messageLog struct {
 //	Id bson.ObjectId
 	Msg *interface{}
@@ -30,18 +25,18 @@ var msgLogChan = make(chan messageLog)
 }
 */
 func initLog() {
-	logfile, err := os.OpenFile(LogFile, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	logfile, err := os.OpenFile(config.LogFile, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("Error opening logfile: %v", err)
 	}
 
 	log.SetOutput(logfile)
 
-/*	mongoSession, err := mgo.Dial(mongoURL)
+/*	mongoSession, err := mgo.Dial(config.LogDbInfo.DbUrl)
 	if err != nil {
 		log.Fatal("Error opening mongo DB: %v", err)
 	}
 
-	msgLogDB := mongoSession.DB(messageLogDB)
+	msgLogDB := mongoSession.DB(config.LogDbInfo.DbName)
 	go messageLogRun(msgLogDB, msgLogChan)*/
 }
