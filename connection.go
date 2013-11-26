@@ -113,7 +113,7 @@ ReadLoop:
 		case 'p': c.pongReceived = true
 		case 'v':
 			if msg != ClientVer {
-				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="moechat.sauyon.com">here</a>.`})
+				c.send(Error{"outofdate", `Client out of date! The most current version is <a href="//moechat.sauyon.com">here</a>.`})
 				log.Printf("Client version for ip %s out of date!", c.ws.RemoteAddr())
 				break ReadLoop
 			} else {
