@@ -2,12 +2,11 @@ package main
 
 import (
 	"log"
-	"strconv"
 	"time"
 )
 
 type hub struct {
-	connections map[*connection]int
+	connections map[*connection]int64
 	usernames map[string]bool
 
 	broadcast chan []byte
@@ -22,7 +21,7 @@ var h = hub {
 	broadcast: make(chan[] byte),
 	register: make(chan *connection),
 	unregister:  make(chan *connection),
-	connections: make(map[*connection]int),
+	connections: make(map[*connection]int64),
 	usernames: make(map[string]bool),
 
 	timeoutTicker: time.NewTicker(10 * time.Second),
@@ -30,16 +29,16 @@ var h = hub {
 
 var lobby = &ChatRoom{0, make(map[*User]bool), "", "lobby"}
 
-var nextID = 1
+var nextAnonId int64 = -1
 func (h *hub) run() {
 	for {
 		select {
 		case c := <-h.register:
-			c.user.ID = nextID
-			nextID += 1
-			h.connections[c] = c.user.ID
-			usersByID[c.user.ID] = c.user
-			c.send(Command{"idset", map[string]string{"id":strconv.Itoa(c.user.ID)}})
+			c.user.Id = nextAnonId
+			nextAnonId--
+			h.connections[c] = c.user.Id
+			usersById[c.user.Id] = c.user
+			c.send(Command{"idset", map[string]string{"id":idToStr(c.user.Id)}})
 			log.Printf("User with ip %s has joined.", c.ws.RemoteAddr())
 		case c := <-h.unregister:
 			if(c.state == joinedChannel) {

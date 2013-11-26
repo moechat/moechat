@@ -19,12 +19,20 @@ const (
 	closed byte = iota
 )
 
+func idToStr(id int64) string {
+	return strconv.FormatInt(id, 10)
+}
+
+func strToId(str string) (int64, error) {
+	return strconv.ParseInt(str, 10, 64)
+}
+
 type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 	// User info
 	user *User
-	target int
+	target int64
 
 	// Buffered channel of outbound messages.
 	toSend chan []byte
@@ -34,9 +42,9 @@ type connection struct {
 	state byte
 }
 
-var nextChatRoomId = 1
+var nextChatRoomId int64 = 1 << 62
 type ChatRoom struct {
-	Id int
+	Id int64
 	Users map[*User]bool
 	Type string
 	Name string
@@ -46,14 +54,14 @@ var pmRooms map[*User]map[*User]*ChatRoom
 var chatRooms []*ChatRoom = []*ChatRoom{lobby}
 
 type Message struct {
-	Sender int `json:"user"`
+	Sender int64 `json:"user"`
 	Body string `json:"msg"`
-	Targets []int `json:"targets,omitempty"`
+	Target int64 `json:"target,omitempty"`
 }
 
 type Notification struct {
 	NotifBody string `json:"notif"`
-	Targets []int `json:"targets,omitempty"`
+	Targets []int64 `json:"targets,omitempty"`
 }
 
 type Error struct {
@@ -121,7 +129,7 @@ ReadLoop:
 				c.state = versionChecked
 			}
 		case 't':
-			c.target, err = strconv.Atoi(msg)
+			c.target, err = strToId(msg)
 			if err != nil {
 				log.Println("Error setting target:", err)
 			}
@@ -137,20 +145,20 @@ ReadLoop:
 
 			if(c.target != 0) {
 				for oc := range getUser(c.target).connections {
-					oc.send(Message{c.user.ID, msg, []int{c.user.ID}})
+					oc.send(Message{c.user.Id, msg, c.user.Id})
 				}
 				for oc := range c.user.connections {
-					oc.send(Message{c.user.ID, msg, []int{c.target}})
+					oc.send(Message{c.user.Id, msg, c.target})
 				}
 			} else {
-				broadcast(Message{c.user.ID, msg, []int{0}})
+				broadcast(Message{c.user.Id, msg, 0})
 			}
 		case 'e':
 			c.user.Email = msg
 			if(c.state == joinedChannel) {
 				broadcast(Command{"emailchange",
 					map[string]string{
-						"id":strconv.Itoa(c.user.ID),
+						"id":idToStr(c.user.Id),
 						"email":msg}})
 			}
 		case 'u':
@@ -182,10 +190,10 @@ ReadLoop:
 				msg = msg + nstr
 			}
 			if c.user.Name != "" {
-				broadcast(Command{"namechange", map[string]string{"id":strconv.Itoa(c.user.ID), "newname":msg}})
+				broadcast(Command{"namechange", map[string]string{"id":idToStr(c.user.Id), "newname":msg}})
 				broadcast(Notification{
 					"User " + c.user.Name + " is now known as " + msg,
-					[]int{0, c.user.ID}})
+					[]int64{0, c.user.Id}})
 			}
 			c.user.Name = msg
 			h.usernames[msg] = true
@@ -195,10 +203,10 @@ ReadLoop:
 					broadcast(Command{"userjoin",
 						map[string]string{
 							"name":c.user.Name,
-							"email":c.user.Email, "id":strconv.Itoa(c.user.ID)}})
+							"email":c.user.Email, "id":idToStr(c.user.Id)}})
 					broadcast(Notification{
 						"User "+c.user.Name+" has joined the channel!",
-						[]int{0, c.user.ID}})
+						[]int64{0, c.user.Id}})
 				}
 				c.state = joinedChannel
 			}
@@ -253,8 +261,8 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			h.unregister <- c
 			broadcast(Notification{
 				"User " + c.user.Name + " has left.",
-				[]int{0, c.user.ID}})
-			broadcast(Command{"userleave", map[string]string{"id":strconv.Itoa(c.user.ID)}})
+				[]int64{0, c.user.Id}})
+			broadcast(Command{"userleave", map[string]string{"id":strconv.FormatInt(c.user.Id, 10)}})
 		} else {
 			h.unregister <- c
 		}
