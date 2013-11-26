@@ -56,7 +56,7 @@ var chatRooms []*ChatRoom = []*ChatRoom{lobby}
 type Message struct {
 	Sender int64 `json:"user"`
 	Body string `json:"msg"`
-	Target int64 `json:"target,omitempty"`
+	Target int64 `json:"target"`
 }
 
 type Notification struct {
