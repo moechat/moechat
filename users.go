@@ -1,9 +1,9 @@
 package main
 
-import (
+/*import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-)
+)*/
 
 type User struct {
 	Name string `json:"username"`
@@ -14,7 +14,7 @@ type User struct {
 }
 
 var usersById map[int64]*User = make(map[int64]*User)
-var userDb sql.DB
+//var userDb sql.DB
 
 func getUser(id int64) *User {
 	return usersById[id]
