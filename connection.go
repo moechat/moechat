@@ -262,7 +262,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			broadcast(Notification{
 				"User " + c.user.Name + " has left.",
 				[]int64{0, c.user.Id}})
-			broadcast(Command{"userleave", map[string]string{"id":strconv.FormatInt(c.user.Id, 10)}})
+			broadcast(Command{"userleave", map[string]string{"id":idToStr(c.user.Id)}})
 		} else {
 			h.unregister <- c
 		}
