@@ -59,10 +59,12 @@ func (h *hub) run() {
 					if(c.state == joinedChannel) {
 						log.Printf("User %s (ip %s) timed out", c.user.Name, c.ws.RemoteAddr())
 					}
-					go broadcast(Notification{
-						"User " + c.user.Name + " has timed out.",
-						[]int64{0, c.user.Id}})
-					go broadcast(Command{"userleave", map[string]string{"id":idToStr(c.user.Id)}})
+					if c.state == joinedChannel && len(c.user.connections) == 1 {
+						go broadcast(Notification{
+							"User " + c.user.Name + " has timed out.",
+							[]int64{0, c.user.Id}})
+						go broadcast(Command{"userleave", map[string]string{"id":idToStr(c.user.Id)}})
+					}
 					c.state = closed
 					delete(h.connections, c)
 					delete(c.user.connections, c)
