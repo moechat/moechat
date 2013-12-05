@@ -210,10 +210,12 @@ ReadLoop:
 				}
 				c.state = joinedChannel
 			}
-		case 's':
-
+		//case 's':
+		case 'k':
+			if c.state >= joinedChannel {
+				c.send(Command{"uploadkey", map[string]string{"key":genUploadKey(c.user.Id)}})
+			}
 		}
-
 		if die {
 			break
 		}

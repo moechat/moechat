@@ -76,5 +76,6 @@ func main() {
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/chat", chatHandler)
 	http.HandleFunc("/users", usersHandler)
+	http.HandleFunc("/upload", uploadHandler)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
