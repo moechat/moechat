@@ -37,23 +37,23 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := r.Header.Get("Authorization")
-	if token == "" {
+	token, ok := r.URL.Query()["token"]
+	if !ok || token[0] == "" {
 		w.Header().Add("WWW-Authenticate", "Token")
 		http.Error(w, "You must provide a token!", http.StatusUnauthorized)
 		return
 	}
-	if !uploadKeys[token] {
+	if !uploadKeys[token[0]] {
 		w.Header().Add("WWW-Authenticate", "Token")
 		http.Error(w, "Token is invalid!", http.StatusUnauthorized)
 		return
 	}
 
-	delete(uploadKeys, token)
-	uidStr := token[:strings.Index(token, " ")]
+	delete(uploadKeys, token[0])
+	uidStr := token[0][:strings.Index(token[0], " ")]
 
 	switch r.URL.Path {
-	case "image":
+	case "img":
 		reader, err := r.MultipartReader()
 		if err != nil {
 			log.Println("Failed to open reader:", err)
