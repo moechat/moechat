@@ -99,6 +99,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Failed to copy file:", err)
 			return
 		}
+
+		imgmsg := "<img src=\"" + fname + "\">"
+		broadcast(Message{uid, imgmsg, 0})
 	default:
 		http.Error(w, "Invalid type argument!", http.StatusBadRequest)
 		log.Printf("Someone attempted to access upload?type=%s\n", ulType)
