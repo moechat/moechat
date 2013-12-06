@@ -14,7 +14,7 @@ type MoeConfig struct {
 	UserDbInfo DbInfo
 	LogDbInfo DbInfo
 
-	ImageDir string
+	UploadDir string
 
 	BlockedIPs map[string]bool
 }

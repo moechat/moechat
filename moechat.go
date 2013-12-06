@@ -19,7 +19,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Handling connection from ip " + ip + " for: " + r.URL.Path)
 	if r.URL.Path == "/" {
-		name := config.ServerRoot + "/index.html"
+		name := path.Join(config.ServerRoot, "index.html")
 		t, err := template.ParseFiles(name)
 		if err != nil {
 			errorHandler(w, r, err)
@@ -31,7 +31,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		name := config.ServerRoot + r.URL.Path
+		name := ""
+		if strings.HasPrefix(r.URL.Path, "/uploads") {
+			name = path.Join(config.UploadDir, r.URL.Path)
+		} else {
+			name = path.Join(config.ServerRoot, r.URL.Path)
+		}
 		file, err := os.Open(name)
 		if err != nil {
 			errorHandler(w, r, err)
@@ -49,7 +54,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	log.Println("Error handling request: " + err.Error())
 	if os.IsNotExist(err) {
-		name := config.ServerRoot + "/404.html"
+		name := path.Join(config.ServerRoot, "404.html")
 		file, err := os.Open(name)
 		if err != nil {
 			log.Println("Error opening 404: " + err.Error())
@@ -72,8 +77,8 @@ func main() {
 	initLog()
 	log.Println("Starting MoeChat!\n")
 
-	os.Mkdir(config.ImageDir, 0777)
-	os.Mkdir(path.Join(config.ImageDir, "tmp"), 0777)
+	os.Mkdir(config.UploadDir, 0777)
+	os.Mkdir(path.Join(config.UploadDir, "tmp"), 0777)
 
 	go h.run()
 

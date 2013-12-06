@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -53,57 +54,58 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete(uploadKeys, token[0])
 	uidStr := token[0][:strings.Index(token[0], " ")]
 
-	ulType, ok := query["type"]
-	if !ok {
-		http.Error(w, "A type argument is required!", http.StatusBadRequest)
+	reader, err := r.MultipartReader()
+	if err != nil {
+		log.Println("Failed to open reader:", err)
+		return
 	}
-	switch ulType[0] {
-	case "img":
-		reader, err := r.MultipartReader()
-		if err != nil {
-			log.Println("Failed to open reader:", err)
-			return
-		}
-		part, err := reader.NextPart()
-		if err != nil {
-			log.Println("Failed to get a part from the reader:", err)
-			return
-		}
+	part, err := reader.NextPart()
+	if err != nil {
+		log.Println("Failed to get a part from the reader:", err)
+		return
+	}
 
-		uid, err := strToId(uidStr)
-		if err != nil {
-			http.Error(w, "Server error!", http.StatusInternalServerError)
-			log.Println("Invalid UID in token:", err)
-			return
-		}
+	uid, err := strToId(uidStr)
+	if err != nil {
+		http.Error(w, "Server error!", http.StatusInternalServerError)
+		log.Println("Invalid UID in token:", err)
+		return
+	}
 
-		fname := ""
-		if uid < 0 {
-			fname = strconv.Itoa(tmpImageName) + "-" + part.FileName()
-			tmpImageName++
-		} else {
-			fname = path.Join(getUser(uid).Name, part.FileName())
-		}
+	fpath := ""
+	if uid < 0 {
+		fname := strconv.Itoa(tmpImageName) + "-" + part.FileName()
+		fpath = path.Join("tmp", fname)
+		tmpImageName++
+	} else {
+		fpath = path.Join(getUser(uid).Name, part.FileName())
+	}
 
-		f, err := os.Create(path.Join(config.ImageDir, "tmp", fname))
-		if err != nil {
-			http.Error(w, "Server error!", http.StatusInternalServerError)
-			log.Println("Failed to create file:", err)
-			return
-		}
-		defer f.Close()
+	f, err := os.Create(path.Join(config.UploadDir, fpath))
+	if err != nil {
+		http.Error(w, "Server error!", http.StatusInternalServerError)
+		log.Println("Failed to create file:", err)
+		return
+	}
+	defer f.Close()
 
-		_, err = io.Copy(f, part)
-		if err != nil {
-			http.Error(w, "Server error!", http.StatusInternalServerError)
-			log.Println("Failed to copy file:", err)
-			return
-		}
+	_, err = io.Copy(f, part)
+	if err != nil {
+		http.Error(w, "Server error!", http.StatusInternalServerError)
+		log.Println("Failed to copy file:", err)
+		return
+	}
 
-		imgmsg := "<img src=\"" + fname + "\">"
-		broadcast(Message{uid, imgmsg, 0})
-	default:
-		http.Error(w, "Invalid type argument!", http.StatusBadRequest)
-		log.Printf("Someone attempted to access upload?type=%s\n", ulType)
+	if target,send := query["target"]; send {
+		mimeType := mime.TypeByExtension(path.Ext(fpath))
+		if strings.HasPrefix(mimeType, "image/") {
+			requestPath := path.Join("/uploads", fpath)
+			imgmsg := "<img src=\"" + requestPath + "\">"
+			t, err := strToId(target[0])
+			if err != nil {
+				log.Println("Failed to parse target:", err)
+			}
+			broadcast(Message{uid, imgmsg, t})
+		}
 	}
 }
