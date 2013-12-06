@@ -37,7 +37,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, ok := r.URL.Query()["token"]
+	query := r.URL.Query()
+	token, ok := query["token"]
 	if !ok || token[0] == "" {
 		w.Header().Add("WWW-Authenticate", "Token")
 		http.Error(w, "You must provide a token!", http.StatusUnauthorized)
@@ -52,7 +53,11 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete(uploadKeys, token[0])
 	uidStr := token[0][:strings.Index(token[0], " ")]
 
-	switch r.URL.Path {
+	ulType, ok := query["type"]
+	if !ok {
+		http.Error(w, "A type argument is required!", http.StatusBadRequest)
+	}
+	switch ulType[0] {
 	case "img":
 		reader, err := r.MultipartReader()
 		if err != nil {
@@ -84,9 +89,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Failed to open file to write:", err)
 			return
 		}
+		defer f.Close()
 
-		io.Copy(f, part)
+		_, err = io.Copy(f, part)
+		if err != nil {
+			log.Println("Failed to copy file:", err)
+			return
+		}
 	default:
-		log.Printf("Someone attempted to access upload/%s\n", r.URL)
+		http.Error(w, "Invalid type argument!", http.StatusBadRequest)
+		log.Printf("Someone attempted to access upload?type=%s\n", ulType)
 	}
 }

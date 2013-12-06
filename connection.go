@@ -114,7 +114,7 @@ ReadLoop:
 		}
 		code, msg := message[0], string(message[1:])
 		if(code != 'p') {
-			log.Printf("Receiving message %s: %s", string(code), string(msg))
+			log.Printf("Receiving message %s:%s", string(code), string(msg))
 		}
 		die := false
 		switch code {
