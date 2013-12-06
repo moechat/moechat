@@ -72,6 +72,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		uid, err := strToId(uidStr)
 		if err != nil {
+			http.Error(w, "Server error!", http.StatusInternalServerError)
 			log.Println("Invalid UID in token:", err)
 			return
 		}
@@ -84,15 +85,17 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			fname = path.Join(getUser(uid).Name, part.FileName())
 		}
 
-		f, err := os.Open(path.Join(config.ImageDir, "tmp", fname))
+		f, err := os.Create(path.Join(config.ImageDir, "tmp", fname))
 		if err != nil {
-			log.Println("Failed to open file to write:", err)
+			http.Error(w, "Server error!", http.StatusInternalServerError)
+			log.Println("Failed to create file:", err)
 			return
 		}
 		defer f.Close()
 
 		_, err = io.Copy(f, part)
 		if err != nil {
+			http.Error(w, "Server error!", http.StatusInternalServerError)
 			log.Println("Failed to copy file:", err)
 			return
 		}
