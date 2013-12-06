@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -70,6 +71,9 @@ func main() {
 
 	initLog()
 	log.Println("Starting MoeChat!\n")
+
+	os.Mkdir(config.ImageDir, 0777)
+	os.Mkdir(path.Join(config.ImageDir, "tmp"), 0777)
 
 	go h.run()
 
