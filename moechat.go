@@ -33,7 +33,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		name := ""
 		if strings.HasPrefix(r.URL.Path, "/uploads") {
-			name = path.Join(config.UploadDir, r.URL.Path)
+			name = path.Join(config.UploadDir, r.URL.Path[8:])
 		} else {
 			name = path.Join(config.ServerRoot, r.URL.Path)
 		}
