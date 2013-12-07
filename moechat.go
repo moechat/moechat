@@ -78,7 +78,6 @@ func main() {
 	moechat = struct{Version string}{config.Version}
 
 	initLog()
-	log.Println("Starting MoeChat!\n")
 
 	os.Mkdir(config.UploadDir, 0777)
 	os.Mkdir(path.Join(config.UploadDir, "tmp"), 0777)
@@ -91,5 +90,7 @@ func main() {
 	http.HandleFunc("/chat", chatHandler)
 	http.HandleFunc("/users", usersHandler)
 	http.HandleFunc("/upload", uploadHandler)
+
+	log.Println("Starting MoeChat!\n")
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
