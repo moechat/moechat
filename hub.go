@@ -74,13 +74,21 @@ func (h *hub) run() {
 			}
 		case m := <-h.broadcast:
 			for c := range h.connections {
-				select {
-				case c.toSend <- m:
-				default:
-					delete(h.connections, c)
-					delete(c.user.connections, c)
-					close(c.toSend)
-					go c.ws.Close()
+				msgs, err := c.otr.Send(m)
+				if err != nil {
+					log.Printf("Error encrypting message %s: %v", string(m), err)
+				}
+
+				for _,msg := range msgs {
+					select {
+					case c.toSend <- msg:
+					default:
+						c.state = closed
+						delete(h.connections, c)
+						delete(c.user.connections, c)
+						close(c.toSend)
+						go c.ws.Close()
+					}
 				}
 			}
 		}

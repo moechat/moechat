@@ -1,6 +1,8 @@
 package main
 
 import (
+	"code.google.com/p/go.crypto/otr"
+	"crypto/rand"
 	"html/template"
 	"net/http"
 	"log"
@@ -9,6 +11,7 @@ import (
 	"strings"
 )
 
+var privKey *otr.PrivateKey = &otr.PrivateKey{}
 var moechat struct{Version string}
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +82,8 @@ func main() {
 
 	os.Mkdir(config.UploadDir, 0777)
 	os.Mkdir(path.Join(config.UploadDir, "tmp"), 0777)
+
+	privKey.Generate(rand.Reader)
 
 	go h.run()
 

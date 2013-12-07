@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"code.google.com/p/go.crypto/otr"
+	"code.google.com/p/go.crypto/otr"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/moechat/moeparser"
@@ -40,6 +40,8 @@ type connection struct {
 	pongReceived bool
 
 	state byte
+
+	otr *otr.Conversation
 }
 
 var nextChatRoomId int64 = 1 << 62
@@ -89,13 +91,23 @@ func (c *connection) send(v interface{}) {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
 		return
 	}
-	select {
-	case c.toSend <- []byte(msg):
-	default:
-		delete(h.connections, c)
-		delete(c.user.connections, c)
-		close(c.toSend)
-		go c.ws.Close()
+
+	msgs, err := c.otr.Send(msg)
+	if err != nil {
+		log.Printf("Error encrypting messages %s: %v", msg, err)
+		return
+	}
+
+	for _,m := range msgs {
+		select {
+		case c.toSend <- m:
+		default:
+			c.state = closed
+			delete(h.connections, c)
+			delete(c.user.connections, c)
+			close(c.toSend)
+			go c.ws.Close()
+		}
 	}
 }
 
@@ -107,11 +119,28 @@ func (c *connection) ping() {
 func (c *connection) reader() {
 ReadLoop:
 	for c.state != closed {
-		_, message, err := c.ws.ReadMessage()
+		_, um, err := c.ws.ReadMessage()
 		if err != nil {
 			log.Println("Error receiving message: " + err.Error())
 			break
 		}
+
+		message, _, _, toSend, err := c.otr.Receive(um)
+		if toSend != nil {
+			for _,msg := range toSend {
+				select {
+				case c.toSend <- msg:
+				default:
+					c.state = closed
+					delete(h.connections, c)
+					delete(c.user.connections, c)
+					close(c.toSend)
+					go c.ws.Close()
+				}
+			}
+			break
+		}
+
 		code, msg := message[0], string(message[1:])
 		if(code != 'p') {
 			log.Printf("Receiving message %s:%s", string(code), string(msg))
@@ -256,6 +285,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		user: &User{connections: make(map[*connection]bool)},
 		ws: ws,
 		pongReceived: true,
+		otr: &otr.Conversation{PrivateKey: privKey},
 	}
 	c.user.connections[c] = true
 	h.register <- c
