@@ -139,7 +139,7 @@ ReadLoop:
 					go c.ws.Close()
 				}
 			}
-			break
+			continue
 		}
 
 		code, msg := message[0], string(message[1:])
