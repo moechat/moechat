@@ -142,7 +142,15 @@ ReadLoop:
 			continue
 		}
 
-		code, msg := message[0], string(message[1:])
+		code, msg := byte(0), ""
+		if len(message) > 1 {
+			code, msg = message[0], string(message[1:])
+		} else if len(message) == 1 {
+			code, msg = message[0], ""
+		} else {
+			continue
+		}
+
 		if(code != 'p') {
 			log.Printf("Receiving message %s:%s", string(code), string(msg))
 		}
