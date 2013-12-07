@@ -127,6 +127,7 @@ ReadLoop:
 
 		message, _, _, toSend, err := c.otr.Receive(um)
 		if toSend != nil {
+			log.Printf("toSend is not nil, sending otr message!")
 			for _,msg := range toSend {
 				select {
 				case c.toSend <- msg:
