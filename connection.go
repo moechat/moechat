@@ -121,11 +121,15 @@ ReadLoop:
 	for c.state != closed {
 		_, um, err := c.ws.ReadMessage()
 		if err != nil {
-			log.Println("Error receiving message: " + err.Error())
+			log.Println("Error receiving message:", err)
 			break
 		}
 
 		message, _, _, toSend, err := c.otr.Receive(um)
+		if err != nil {
+			log.Println("Error unencrypting message:", err)
+			break
+		}
 		if toSend != nil {
 			log.Printf("toSend is not nil, sending otr message!")
 			for _,msg := range toSend {
