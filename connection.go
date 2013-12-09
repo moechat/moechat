@@ -135,8 +135,9 @@ ReadLoop:
 			log.Println("Error unencrypting message:", err)
 			continue
 		}
-		if change == otr.SMPComplete {
-			log.Printf("SMP for user with ip %s succeeded.\n", c.ws.RemoteAddr())
+		if change == otr.ConversationEnded {
+			log.Printf("Client ended OTR - creating new Conversation.\n", c.ws.RemoteAddr())
+			c.otr = &otr.Conversation{PrivateKey: privKey}
 		}
 		if toSend != nil {
 			log.Printf("toSend is not nil, sending otr message!")
