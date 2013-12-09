@@ -125,10 +125,13 @@ ReadLoop:
 			break
 		}
 
-		message, _, _, toSend, err := c.otr.Receive(um)
+		message, _, change, toSend, err := c.otr.Receive(um)
 		if err != nil {
 			log.Println("Error unencrypting message:", err)
-			break
+			continue
+		}
+		if change == otr.SMPComplete {
+			log.Printf("SMP for user with ip %s succeeded.\n", c.ws.RemoteAddr())
 		}
 		if toSend != nil {
 			log.Printf("toSend is not nil, sending otr message!")
