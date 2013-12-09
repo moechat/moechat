@@ -74,9 +74,16 @@ func (h *hub) run() {
 			}
 		case m := <-h.broadcast:
 			for c := range h.connections {
-				msgs, err := c.otr.Send(m)
-				if err != nil {
-					log.Printf("Error encrypting message %s: %v", string(m), err)
+				msgs := [][]byte{}
+				err := error(nil)
+				if c.otr.IsEncrypted() {
+					msgs, err = c.otr.Send(m)
+					if err != nil {
+						log.Printf("Error encrypting message %s: %v", m, err)
+						return
+					}
+				} else {
+					msgs = [][]byte{m}
 				}
 
 				for _,msg := range msgs {

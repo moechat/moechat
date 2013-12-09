@@ -92,10 +92,15 @@ func (c *connection) send(v interface{}) {
 		return
 	}
 
-	msgs, err := c.otr.Send(msg)
-	if err != nil {
-		log.Printf("Error encrypting messages %s: %v", msg, err)
-		return
+	msgs := [][]byte{}
+	if c.otr.IsEncrypted() {
+		msgs, err = c.otr.Send(msg)
+		if err != nil {
+			log.Printf("Error encrypting messages %s: %v", msg, err)
+			return
+		}
+	} else {
+		msgs = [][]byte{msg}
 	}
 
 	for _,m := range msgs {
