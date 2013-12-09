@@ -136,7 +136,7 @@ ReadLoop:
 			continue
 		}
 		if change == otr.ConversationEnded {
-			log.Printf("User %s (ip %s) ended OTR - creating new Conversation.\n", c.user.Name(), c.ws.RemoteAddr())
+			log.Printf("User %s (ip %s) ended OTR - creating new Conversation.\n", c.user.Name, c.ws.RemoteAddr())
 			c.otr = &otr.Conversation{PrivateKey: privKey}
 		}
 		if toSend != nil {
