@@ -12,7 +12,6 @@ import (
 )
 
 var privKey *otr.PrivateKey = &otr.PrivateKey{}
-var moechat struct{ Version string }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	ip := strings.Split(r.RemoteAddr, ":")[0]
@@ -28,13 +27,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			errorHandler(w, r, err)
 			return
 		}
-		err = t.Execute(w, moechat)
+		err = t.Execute(w, config)
 		if err != nil {
 			errorHandler(w, r, err)
 			return
 		}
 	} else {
-		name := ""
+		var name string
 		if strings.HasPrefix(r.URL.Path, "/uploads") {
 			name = path.Join(config.UploadDir, r.URL.Path[8:])
 		} else {
@@ -74,8 +73,6 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 
 func main() {
 	parseConf()
-
-	moechat = struct{ Version string }{config.Version}
 
 	initLog()
 
