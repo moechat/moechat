@@ -334,7 +334,7 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 
 	users := []*User{}
 
-	for conn, _ := range h.connections {
+	for conn := range h.connections {
 		users = append(users, conn.user)
 	}
 

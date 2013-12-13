@@ -8,11 +8,11 @@ import (
 
 type MoeConfig struct {
 	ServerRoot string
-	LogFile string
-	Version string
+	LogFile    string
+	Version    string
 
 	UserDbInfo DbInfo
-	LogDbInfo DbInfo
+	LogDbInfo  DbInfo
 
 	UploadDir string
 
@@ -20,8 +20,8 @@ type MoeConfig struct {
 }
 
 type DbInfo struct {
-	DBUrl string
-	DBName string
+	DBUrl     string
+	DBName    string
 	TableName string
 }
 

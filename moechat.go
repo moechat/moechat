@@ -4,18 +4,18 @@ import (
 	"code.google.com/p/go.crypto/otr"
 	"crypto/rand"
 	"html/template"
-	"net/http"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"strings"
 )
 
 var privKey *otr.PrivateKey = &otr.PrivateKey{}
-var moechat struct{Version string}
+var moechat struct{ Version string }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	ip := strings.Split(r.RemoteAddr,":")[0]
+	ip := strings.Split(r.RemoteAddr, ":")[0]
 	if ok := config.BlockedIPs[ip]; ok {
 		return
 	}
@@ -75,7 +75,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err error) {
 func main() {
 	parseConf()
 
-	moechat = struct{Version string}{config.Version}
+	moechat = struct{ Version string }{config.Version}
 
 	initLog()
 

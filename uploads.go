@@ -96,7 +96,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if target,send := query["target"]; send {
+	if target, send := query["target"]; send {
 		mimeType := mime.TypeByExtension(path.Ext(fpath))
 		if strings.HasPrefix(mimeType, "image/") {
 			requestPath := path.Join("/uploads", fpath)

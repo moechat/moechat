@@ -1,33 +1,33 @@
 package main
 
 import (
-	"io"
 	"crypto/sha1"
 	"fmt"
+	"io"
 	"math/rand"
 )
 
-func generateToken() (string) {
+func generateToken() string {
 	return hashString(randomString(20))
 }
 
 /* Hashes and returns an input string using SHA1 */
-func  hashString(input string) (string) {
+func hashString(input string) string {
 	h := sha1.New()
 	io.WriteString(h, input)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func randomString (l int) string {
-    bytes := make([]byte, l)
-    for i:=0 ; i<l ; i++ {
-        bytes[i] = byte(randInt(65,90))
-    }
-    return string(bytes)
+func randomString(l int) string {
+	bytes := make([]byte, l)
+	for i := 0; i < l; i++ {
+		bytes[i] = byte(randInt(65, 90))
+	}
+	return string(bytes)
 }
 
-func randInt(min int , max int) int {
-    return min + rand.Intn(max-min)
+func randInt(min int, max int) int {
+	return min + rand.Intn(max-min)
 }
 
 /*
