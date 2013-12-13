@@ -4,7 +4,7 @@ import (
 	"code.google.com/p/go.crypto/otr"
 	"encoding/json"
 	"github.com/gorilla/websocket"
-	"github.com/moechat/moeparser"
+	"github.com/moechat/parser/bbcode"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,10 +13,10 @@ import (
 
 const (
 	connected byte = iota
-	versionChecked byte = iota
-	joinedChannel byte = iota
-	authenticated byte = iota
-	closed byte = iota
+	versionChecked
+	joinedChannel
+	authenticated
+	closed
 )
 
 func idToStr(id int64) string {
@@ -31,7 +31,7 @@ type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 	// User info
-	user *User
+	user   *User
 	target int64
 
 	// Buffered channel of outbound messages.
@@ -45,39 +45,40 @@ type connection struct {
 }
 
 var nextChatRoomId int64 = 1 << 62
+
 type ChatRoom struct {
-	Id int64
+	Id    int64
 	Users map[*User]bool
-	Type string
-	Name string
+	Type  string
+	Name  string
 }
 
 var pmRooms map[*User]map[*User]*ChatRoom
 var chatRooms []*ChatRoom = []*ChatRoom{lobby}
 
 type Message struct {
-	Sender int64 `json:"user"`
-	Body string `json:"msg"`
-	Target int64 `json:"target"`
+	Sender int64  `json:"user"`
+	Body   string `json:"msg"`
+	Target int64  `json:"target"`
 }
 
 type Notification struct {
-	NotifBody string `json:"notif"`
-	Targets []int64 `json:"targets,omitempty"`
+	NotifBody string  `json:"notif"`
+	Targets   []int64 `json:"targets,omitempty"`
 }
 
 type Error struct {
 	ErrorType string `json:"error"`
-	ErrorMsg string `json:"msg"`
+	ErrorMsg  string `json:"msg"`
 }
 
 type Command struct {
-	Command string `json:"cmd"`
-	Args map[string]string `json:"args"`
+	Command string            `json:"cmd"`
+	Args    map[string]string `json:"args"`
 }
 
 func broadcast(v interface{}) {
-	msg, err := json.Marshal(v);
+	msg, err := json.Marshal(v)
 	if err != nil {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
 		return
@@ -86,7 +87,7 @@ func broadcast(v interface{}) {
 }
 
 func (c *connection) send(v interface{}) {
-	msg, err := json.Marshal(v);
+	msg, err := json.Marshal(v)
 	if err != nil {
 		log.Printf("Error converting message %s to JSON: %v", msg, err)
 		return
@@ -103,7 +104,7 @@ func (c *connection) send(v interface{}) {
 		msgs = [][]byte{msg}
 	}
 
-	for _,m := range msgs {
+	for _, m := range msgs {
 		select {
 		case c.toSend <- m:
 		default:
@@ -141,7 +142,7 @@ ReadLoop:
 		}
 		if toSend != nil {
 			log.Printf("toSend is not nil, sending otr message!")
-			for _,msg := range toSend {
+			for _, msg := range toSend {
 				select {
 				case c.toSend <- msg:
 				default:
@@ -164,13 +165,14 @@ ReadLoop:
 			continue
 		}
 
-		if(code != 'p') {
+		if code != 'p' {
 			log.Printf("Receiving message %s:%s", string(code), string(msg))
 		}
 		die := false
 		c.pongReceived = true
 		switch code {
-		default: log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
+		default:
+			log.Println("Code is not one of p, m, e, v and u. Code is: " + string(code))
 		case 'p':
 		case 'v':
 			if msg != config.Version && msg != "0.13" {
@@ -190,12 +192,12 @@ ReadLoop:
 				break
 			}
 
-			msg, err = moeparser.Parse(msg)
+			msg, err = bbcode.Parse(msg)
 			if err != nil {
 				log.Println("Error parsing message:", err)
 			}
 
-			if(c.target != 0) {
+			if c.target != 0 {
 				for oc := range getUser(c.target).connections {
 					oc.send(Message{c.user.Id, msg, c.user.Id})
 				}
@@ -207,11 +209,11 @@ ReadLoop:
 			}
 		case 'e':
 			c.user.Email = msg
-			if(c.state == joinedChannel) {
+			if c.state == joinedChannel {
 				broadcast(Command{"emailchange",
 					map[string]string{
-						"id":idToStr(c.user.Id),
-						"email":msg}})
+						"id":    idToStr(c.user.Id),
+						"email": msg}})
 			}
 		case 'u':
 			msg = strings.TrimSpace(msg)
@@ -224,8 +226,8 @@ ReadLoop:
 
 			if len(msg) > 30 {
 				msg = msg[:30]
-				c.send(Notification{NotifBody: "Name is too long, your name will be set to "+msg})
-				c.send(Command{"fnamechange", map[string]string{"newname":msg}})
+				c.send(Notification{NotifBody: "Name is too long, your name will be set to " + msg})
+				c.send(Command{"fnamechange", map[string]string{"newname": msg}})
 			}
 
 			delete(h.usernames, c.user.Name)
@@ -237,12 +239,12 @@ ReadLoop:
 					num += 1
 					nstr = strconv.Itoa(num)
 				}
-				c.send(Notification{NotifBody: "Name "+msg+" is taken, your name will be set to "+msg+nstr})
-				c.send(Command{"fnamechange", map[string]string{"newname":msg+nstr}})
+				c.send(Notification{NotifBody: "Name " + msg + " is taken, your name will be set to " + msg + nstr})
+				c.send(Command{"fnamechange", map[string]string{"newname": msg + nstr}})
 				msg = msg + nstr
 			}
 			if c.user.Name != "" {
-				broadcast(Command{"namechange", map[string]string{"id":idToStr(c.user.Id), "newname":msg}})
+				broadcast(Command{"namechange", map[string]string{"id": idToStr(c.user.Id), "newname": msg}})
 				broadcast(Notification{
 					"User " + c.user.Name + " is now known as " + msg,
 					[]int64{0, c.user.Id}})
@@ -254,10 +256,10 @@ ReadLoop:
 				if len(c.user.connections) == 1 {
 					broadcast(Command{"userjoin",
 						map[string]string{
-							"name":c.user.Name,
-							"email":c.user.Email, "id":idToStr(c.user.Id)}})
+							"name":  c.user.Name,
+							"email": c.user.Email, "id": idToStr(c.user.Id)}})
 					broadcast(Notification{
-						"User "+c.user.Name+" has joined the channel!",
+						"User " + c.user.Name + " has joined the channel!",
 						[]int64{0, c.user.Id}})
 				}
 				c.state = joinedChannel
@@ -265,7 +267,7 @@ ReadLoop:
 		//case 's':
 		case 'k':
 			if c.state >= joinedChannel {
-				c.send(Command{"uploadkey", map[string]string{"key":genUploadKey(c.user.Id)}})
+				c.send(Command{"uploadkey", map[string]string{"key": genUploadKey(c.user.Id)}})
 			}
 		}
 		if die {
@@ -291,7 +293,7 @@ func (c *connection) writer() {
 }
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
-	ip := strings.Split(r.RemoteAddr,":")[0]
+	ip := strings.Split(r.RemoteAddr, ":")[0]
 	log.Println("Handling request to /chat from ip " + ip)
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
@@ -303,11 +305,11 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &connection{
-		toSend: make(chan []byte, 256),
-		user: &User{connections: make(map[*connection]bool)},
-		ws: ws,
+		toSend:       make(chan []byte, 256),
+		user:         &User{connections: make(map[*connection]bool)},
+		ws:           ws,
 		pongReceived: true,
-		otr: &otr.Conversation{PrivateKey: privKey},
+		otr:          &otr.Conversation{PrivateKey: privKey},
 	}
 	c.user.connections[c] = true
 	h.register <- c
@@ -317,7 +319,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			broadcast(Notification{
 				"User " + c.user.Name + " has left.",
 				[]int64{0, c.user.Id}})
-			broadcast(Command{"userleave", map[string]string{"id":idToStr(c.user.Id)}})
+			broadcast(Command{"userleave", map[string]string{"id": idToStr(c.user.Id)}})
 		} else {
 			h.unregister <- c
 		}
@@ -327,7 +329,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func usersHandler(w http.ResponseWriter, r *http.Request) {
-	ip := strings.Split(r.RemoteAddr,":")[0]
+	ip := strings.Split(r.RemoteAddr, ":")[0]
 	log.Println("Handling request to /users from ip " + ip)
 
 	users := []*User{}
