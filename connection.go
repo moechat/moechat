@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/go.crypto/otr"
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/mattn/go-xmpp"
 	"github.com/moechat/parser/bbcode"
 	"log"
 	"net/http"
@@ -264,6 +265,16 @@ ReadLoop:
 				}
 				c.state = joinedChannel
 			}
+		case 'x':
+			info := strings.SplitN(msg, ":", 3)
+			if len(info) < 3 {
+				c.send(Error{"badxmpp", "Invalid credentials were provided"})
+			}
+			client, err := xmpp.NewClient(info[0], info[1], info[2], true)
+			if err != nil {
+				log.Print
+			}
+			defer client.Close()
 		//case 's':
 		case 'k':
 			if c.state >= joinedChannel {
